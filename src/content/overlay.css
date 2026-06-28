@@ -1,0 +1,316 @@
+:host { all: initial; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── selection toolbar: one clean vibrant gradient pill ─────────────────────── */
+.vt-sel-wrap {
+  position: fixed;
+  z-index: 2147483647;
+  transform: translate(-50%, -100%);
+  padding-bottom: 9px;
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+.vt-sel {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 34px;
+  padding: 0 14px;
+  background: #25617a; /* teal-slate accent */
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 10px;
+  color: #fff;
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow:
+    0 12px 28px -10px rgba(15, 64, 82, 0.6),
+    0 2px 8px rgba(15, 23, 42, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.16);
+  transition: transform 0.14s ease, box-shadow 0.14s ease, filter 0.14s ease;
+}
+.vt-sel:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.08);
+  box-shadow:
+    0 18px 36px -10px rgba(15, 64, 82, 0.72),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22);
+}
+.vt-sel:active {
+  transform: translateY(0);
+  filter: brightness(0.97);
+}
+.vt-sel:disabled {
+  cursor: default;
+  filter: saturate(0.7) brightness(0.95);
+  box-shadow: 0 6px 18px -10px rgba(15, 64, 82, 0.45);
+}
+
+.vt-sel-ic {
+  width: 23px;
+  height: 10px;
+  flex: 0 0 auto;
+}
+.vt-sel-label {
+  color: #fff;
+}
+.vt-sel-label.busy {
+  color: rgba(255, 255, 255, 0.82);
+}
+
+/* downward caret pointing at the selection */
+.vt-sel::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -5px;
+  width: 11px;
+  height: 11px;
+  background: #25617a;
+  border-right: 1px solid rgba(255, 255, 255, 0.16);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.16);
+  transform: translateX(-50%) rotate(45deg);
+}
+
+/* error notification — same Litmus card language as the popup */
+.vt-toast {
+  position: fixed;
+  z-index: 2147483647;
+  left: 50%;
+  bottom: 22px;
+  transform: translateX(-50%);
+  width: 320px;
+  max-width: calc(100vw - 32px);
+  padding: 12px 14px;
+  background: #ffffff;
+  color: #1b2228;
+  border: 1px solid #dce0e3;
+  border-radius: 12px;
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  box-shadow: 0 16px 40px -12px rgba(15, 23, 42, 0.32);
+}
+.vt-toast-head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.vt-toast .vt-sel-ic {
+  width: 22px;
+  height: 9px;
+}
+.vt-toast-brand {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #1b2228;
+}
+.vt-toast-x {
+  margin-left: auto;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #94a3b8;
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+}
+.vt-toast-x:hover {
+  background: #eef2f4;
+  color: #1b2228;
+}
+.vt-toast-title {
+  margin-top: 9px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #c8313a; /* danger ink */
+}
+.vt-toast-msg {
+  margin-top: 3px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: #5c6a70;
+}
+.vt-toast-btn {
+  margin-top: 11px;
+  height: 30px;
+  padding: 0 13px;
+  border: 0;
+  border-radius: 8px;
+  background: #25617a; /* teal-slate accent */
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.14s ease;
+}
+.vt-toast-btn:hover {
+  background: #1d4f63;
+}
+
+/* ── page scan sweep: the litmus scale, swept across the whole page ─────────── */
+.vt-scan {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483646;
+  pointer-events: none;
+  overflow: hidden;
+  animation: vt-scan-fade 0.25s ease;
+}
+
+/* faint analysis grid that fades in under the beam */
+.vt-scan-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(37, 97, 122, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(37, 97, 122, 0.06) 1px, transparent 1px);
+  background-size: 38px 38px;
+  opacity: 0;
+  animation: vt-scan-grid-in 0.5s ease forwards;
+}
+
+/* the moving beam — a false→true gradient line with a soft glow trail */
+.vt-scan-beam {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 3px;
+  top: -3px;
+  background: linear-gradient(90deg, #fb7185 0%, #fbbf24 50%, #34d399 100%);
+  box-shadow:
+    0 0 14px 2px rgba(52, 211, 153, 0.55),
+    0 0 60px 12px rgba(37, 97, 122, 0.28);
+  animation: vt-scan-beam 1.9s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+/* the trailing wash the beam drags behind it */
+.vt-scan-beam::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 100%;
+  height: 140px;
+  background: linear-gradient(to top, rgba(37, 97, 122, 0.16), transparent);
+}
+
+/* framing corner brackets that pulse */
+.vt-scan-corner {
+  position: absolute;
+  width: 26px;
+  height: 26px;
+  border: 2px solid rgba(37, 97, 122, 0.55);
+  animation: vt-scan-pulse 1.9s ease-in-out infinite;
+}
+.vt-scan-corner.tl { top: 14px; left: 14px; border-right: 0; border-bottom: 0; }
+.vt-scan-corner.tr { top: 14px; right: 14px; border-left: 0; border-bottom: 0; }
+.vt-scan-corner.bl { bottom: 14px; left: 14px; border-right: 0; border-top: 0; }
+.vt-scan-corner.br { bottom: 14px; right: 14px; border-left: 0; border-top: 0; }
+
+/* status chip, bottom-center, same card language as the toast */
+.vt-scan-chip {
+  position: absolute;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  height: 34px;
+  padding: 0 15px;
+  background: rgba(23, 30, 34, 0.92);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  box-shadow: 0 14px 34px -12px rgba(15, 23, 42, 0.5);
+  animation: vt-scan-chip-in 0.35s ease;
+}
+.vt-scan-chip .vt-sel-ic { width: 23px; height: 10px; }
+.vt-scan-dots::after {
+  content: '';
+  animation: vt-scan-dots 1.4s steps(4, end) infinite;
+}
+
+@keyframes vt-scan-beam {
+  0% { top: -3px; }
+  100% { top: 100%; }
+}
+@keyframes vt-scan-pulse {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 0.9; }
+}
+@keyframes vt-scan-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes vt-scan-grid-in {
+  to { opacity: 1; }
+}
+@keyframes vt-scan-chip-in {
+  from { opacity: 0; transform: translate(-50%, 8px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+@keyframes vt-scan-dots {
+  0% { content: ''; }
+  25% { content: '.'; }
+  50% { content: '..'; }
+  75% { content: '...'; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vt-scan-beam,
+  .vt-scan-corner,
+  .vt-scan-dots::after { animation: none; }
+  .vt-scan-beam { top: 50%; }
+}
+
+@media (prefers-color-scheme: dark) {
+  .vt-scan-grid {
+    background-image:
+      linear-gradient(rgba(126, 192, 214, 0.07) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(126, 192, 214, 0.07) 1px, transparent 1px);
+  }
+  .vt-scan-corner { border-color: rgba(126, 192, 214, 0.6); }
+}
+
+@media (prefers-color-scheme: dark) {
+  .vt-toast {
+    background: #171e22;
+    color: #e5eaec;
+    border-color: #2a343a;
+  }
+  .vt-toast-brand {
+    color: #e5eaec;
+  }
+  .vt-toast-x {
+    color: #93a3ab;
+  }
+  .vt-toast-x:hover {
+    background: #222b30;
+    color: #e5eaec;
+  }
+  .vt-toast-title {
+    color: #ff7b81;
+  }
+  .vt-toast-msg {
+    color: #93a3ab;
+  }
+  .vt-toast-btn {
+    background: #3f86a6;
+  }
+  .vt-toast-btn:hover {
+    background: #4f9dbe;
+  }
+}
