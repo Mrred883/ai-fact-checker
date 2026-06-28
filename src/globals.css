@@ -1,0 +1,236 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ───────────────────────────────────────────────────────────────────────────
+   LITMUS — a fact-checker's instrument.
+   Every verdict is a position on a false → true scale. Slate paper, graphite
+   ink, one teal-slate accent; the only gradient in the product is the truth
+   scale itself, because there it means something.
+   Type: Space Grotesk (display) · IBM Plex Sans (body) · IBM Plex Mono (data).
+   ─────────────────────────────────────────────────────────────────────────── */
+
+@layer base {
+  :root {
+    --font-display: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+    --font-body: 'IBM Plex Sans', ui-sans-serif, system-ui, -apple-system, sans-serif;
+    --font-mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+
+    --background: 200 14% 96%; /* slate paper */
+    --foreground: 205 22% 13%; /* graphite ink */
+    --card: 0 0% 100%;
+    --card-foreground: 205 22% 13%;
+    --muted: 200 14% 93%;
+    --muted-foreground: 200 10% 41%;
+    --primary: 199 54% 31%; /* teal-slate accent */
+    --primary-hover: 199 57% 25%;
+    --primary-foreground: 0 0% 100%;
+    --danger: 357 72% 56%;
+    --danger-hover: 357 64% 48%;
+    --border: 200 14% 88%;
+    --input: 200 12% 82%;
+    --ring: 199 54% 31%;
+    --radius: 0.625rem;
+
+    /* litmus scale — false → true */
+    --sc-false: #e5484d;
+    --sc-mid: #f5a524;
+    --sc-true: #1f9254;
+
+    /* provenance axis — human (cool slate-blue) → AI (synthetic violet).
+       deliberately a different hue family + geometry than the truth scale. */
+    --ai-human: #2f6f9e;
+    --ai-mid: #6b6f9e;
+    --ai-synth: #7c4dff;
+
+    /* verdict ink (marker + label) */
+    --vf-false: #d62f34;
+    --vf-misleading: #b06a08;
+    --vf-subst: #1a7d49;
+    --vf-true: #136e3e;
+    --vf-unverifiable: #5b6b73;
+  }
+
+  .dark {
+    --background: 200 18% 9%;
+    --foreground: 200 14% 92%;
+    --card: 200 18% 11%;
+    --card-foreground: 200 14% 92%;
+    --muted: 200 16% 15%;
+    --muted-foreground: 200 9% 58%;
+    --primary: 199 44% 54%;
+    --primary-hover: 199 48% 62%;
+    --primary-foreground: 200 30% 9%;
+    --danger: 357 78% 64%;
+    --danger-hover: 357 82% 70%;
+    --border: 203 16% 21%;
+    --input: 203 14% 26%;
+    --ring: 199 44% 54%;
+
+    --sc-false: #f0595e;
+    --sc-mid: #f5a524;
+    --sc-true: #2eaa6a;
+
+    --ai-human: #4d92c4;
+    --ai-mid: #8a8fd1;
+    --ai-synth: #9d75ff;
+
+    --vf-false: #ff6a6f;
+    --vf-misleading: #f5a524;
+    --vf-subst: #34c77f;
+    --vf-true: #41c178;
+    --vf-unverifiable: #93a3ab;
+  }
+
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+}
+
+@layer utilities {
+  .font-display {
+    font-family: var(--font-display);
+    font-feature-settings: 'ss01', 'ss02';
+  }
+  .font-data {
+    font-family: var(--font-mono);
+    font-feature-settings: 'zero';
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* solid paper ground (no mesh, no translucency) */
+  .paper {
+    background-color: hsl(var(--background));
+  }
+
+  /* a thin teal masthead rule under the wordmark */
+  .rule-accent {
+    border-bottom: 2px solid hsl(var(--primary));
+  }
+
+  /* ── the signature: litmus truth scale ─────────────────────────────────── */
+  .litmus-track {
+    position: relative;
+    height: 6px;
+    border-radius: 999px;
+    background-image: linear-gradient(90deg, var(--sc-false) 0%, var(--sc-mid) 50%, var(--sc-true) 100%);
+  }
+  .litmus-track.is-flat {
+    background-image: none;
+    background-color: hsl(var(--muted-foreground) / 0.28);
+  }
+  .litmus-marker {
+    position: absolute;
+    top: 50%;
+    width: 3px;
+    height: 18px;
+    border-radius: 2px;
+    transform: translate(-50%, -50%);
+    box-shadow: 0 0 0 3px hsl(var(--card)), 0 1px 3px hsl(var(--foreground) / 0.35);
+  }
+
+  /* ── buttons: quiet, confident, token-driven ───────────────────────────── */
+  .btn-primary {
+    background: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+  }
+  .btn-primary:hover {
+    background: hsl(var(--primary-hover));
+    box-shadow: 0 5px 16px -8px hsl(var(--primary) / 0.7);
+  }
+  .btn-danger {
+    background: hsl(var(--danger));
+    color: #fff;
+  }
+  .btn-danger:hover {
+    background: hsl(var(--danger-hover));
+    box-shadow: 0 5px 16px -8px hsl(var(--danger) / 0.7);
+  }
+  .btn-quiet {
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    color: hsl(var(--foreground));
+  }
+  .btn-quiet:hover {
+    border-color: hsl(var(--primary) / 0.55);
+    background: hsl(var(--primary) / 0.07);
+  }
+
+  /* verdict ink */
+  .v-TRUE { color: var(--vf-true); }
+  .v-SUBSTANTIALLY_TRUE { color: var(--vf-subst); }
+  .v-MISLEADING { color: var(--vf-misleading); }
+  .v-FALSE { color: var(--vf-false); }
+  .v-UNVERIFIABLE { color: var(--vf-unverifiable); }
+
+  .mk-TRUE { background: var(--vf-true); }
+  .mk-SUBSTANTIALLY_TRUE { background: var(--vf-subst); }
+  .mk-MISLEADING { background: var(--vf-misleading); }
+  .mk-FALSE { background: var(--vf-false); }
+  .mk-UNVERIFIABLE { background: var(--vf-unverifiable); }
+
+  /* "set the record straight" — the true fact, anchored at the true end of the scale */
+  .setright {
+    background: color-mix(in srgb, var(--sc-true) 14%, transparent);
+  }
+  .setright-kicker { color: var(--vf-true); }
+
+  /* provenance meter — vertical segmented human→AI gauge (distinct from litmus) */
+  .prov-meter {
+    display: flex;
+    flex-direction: column-reverse; /* fill grows up: human at base, AI at top */
+    gap: 3px;
+    width: 12px;
+    height: 86px;
+  }
+  .prov-seg {
+    flex: 1;
+    border-radius: 2px;
+    background: hsl(var(--muted-foreground) / 0.16);
+    transition: background 0.18s ease;
+  }
+  .prov-seg.on {
+    background: var(--seg-color, var(--ai-mid));
+    box-shadow: 0 0 8px -2px var(--seg-color, var(--ai-mid));
+  }
+  .ai-human { color: var(--ai-human); }
+  .ai-synth { color: var(--ai-synth); }
+  .ai-neutral { color: hsl(var(--muted-foreground)); }
+  .dot-ai { background: var(--ai-synth); }
+  .dot-human { background: var(--ai-human); }
+  .dot-neutral { background: hsl(var(--muted-foreground) / 0.5); }
+
+  /* sentiment tones */
+  .tone-positive { color: var(--vf-true); }
+  .tone-negative { color: var(--vf-false); }
+  .tone-neutral { color: var(--vf-unverifiable); }
+  .bg-tone-positive { background: color-mix(in srgb, var(--sc-true) 16%, transparent); }
+  .bg-tone-negative { background: color-mix(in srgb, var(--sc-false) 16%, transparent); }
+  .bg-tone-neutral { background: hsl(var(--muted-foreground) / 0.12); }
+  .fill-pos { background: var(--sc-true); }
+  .fill-neg { background: var(--sc-false); }
+  .fill-neu { background: hsl(var(--muted-foreground) / 0.45); }
+
+  /* follow-up Q&A bubbles */
+  .ask-q {
+    background: hsl(var(--primary) / 0.12);
+    color: hsl(var(--foreground));
+    border: 1px solid hsl(var(--primary) / 0.18);
+  }
+  .ask-a {
+    background: hsl(var(--muted-foreground) / 0.06);
+    border: 1px solid hsl(var(--border));
+  }
+}
+
+/* graphite scrollbars */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { background: hsl(var(--muted-foreground) / 0.32); border-radius: 8px; }
+::-webkit-scrollbar-thumb:hover { background: hsl(var(--muted-foreground) / 0.5); }
+::-webkit-scrollbar-track { background: transparent; }
