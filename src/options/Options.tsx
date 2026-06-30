@@ -1,13 +1,18 @@
 import { useEffect, useState } from 'react'
-import { Eye, EyeOff, Check, X, ExternalLink } from 'lucide-react'
+import { Eye, EyeOff, Check, X, ExternalLink, Trash2, ShieldCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
 import { Select } from '@/components/ui/select'
 import { LitmusMark } from '@/components/LitmusMark'
 import { applyTheme } from '@/lib/theme'
-import { getSettings, saveSettings } from '@/lib/storage'
+import { getSettings, saveSettings, clearAllData } from '@/lib/storage'
 import { callClaude } from '@/lib/anthropic'
 import { DEFAULT_SETTINGS, type Settings } from '@/lib/types'
+
+/** light client-side sanity check on key shape (not a real auth check) */
+function looksLikeClaudeKey(k: string): boolean {
+  return /^sk-ant-[A-Za-z0-9_-]{20,}$/.test(k)
+}
 
 type KeyStatus = 'idle' | 'testing' | 'ok' | 'bad'
 
@@ -67,6 +72,18 @@ export function Options() {
       setTimeout(() => setSavedFlash(false), 1200)
     })
     if ('apiKey' in p) setKeyStatus('idle')
+  }
+
+  const keyShapeWarn = s.apiKey.length > 0 && !looksLikeClaudeKey(s.apiKey)
+
+  async function wipeAll() {
+    if (!confirm('Remove your API keys, settings, and all saved history from this browser? This cannot be undone.'))
+      return
+    await clearAllData()
+    setS(DEFAULT_SETTINGS)
+    applyTheme(DEFAULT_SETTINGS.theme)
+    setKeyStatus('idle')
+    setKeyMsg('')
   }
 
   async function testKey() {
@@ -166,6 +183,15 @@ export function Options() {
                 {keyMsg}
               </p>
             )}
+            {keyShapeWarn && (
+              <p className="mt-2 text-xs text-[hsl(var(--danger))]">
+                That doesn’t look like a Claude key — they start with “sk-ant-”. Double-check before saving.
+              </p>
+            )}
+            <p className="mt-3 flex items-start gap-1.5 text-[11px] leading-relaxed text-muted-foreground">
+              <ShieldCheck className="mt-px size-3.5 shrink-0 text-primary" />
+              Your key is stored only in this browser and is sent only to Anthropic’s API. It never reaches the developer or any other server.
+            </p>
           </Section>
 
           {/* ENGINE */}
@@ -278,6 +304,21 @@ export function Options() {
                 />
               </Row>
             </div>
+          </Section>
+
+          {/* DATA */}
+          <Section kicker="Data" title="Your data">
+            <p className="-mt-1 mb-3 text-xs leading-relaxed text-muted-foreground">
+              Everything lives in this browser: your keys, settings, and check history. Remove all of it at once below.
+            </p>
+            <Button
+              variant="outline"
+              onClick={wipeAll}
+              className="h-10 border-[hsl(var(--danger))]/40 text-[hsl(var(--danger))] hover:bg-[hsl(var(--danger))]/10"
+            >
+              <Trash2 className="size-4" />
+              Clear all data
+            </Button>
           </Section>
         </div>
 

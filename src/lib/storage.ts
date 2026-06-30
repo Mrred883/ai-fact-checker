@@ -73,6 +73,11 @@ export async function clearSentiment(): Promise<void> {
   await chrome.storage.local.set({ [SENTIMENT_KEY]: [] })
 }
 
+/** Wipe everything the extension stores — keys, settings, history, assets. */
+export async function clearAllData(): Promise<void> {
+  await chrome.storage.local.clear()
+}
+
 export function onSettingsChanged(cb: (s: Settings) => void): () => void {
   const handler = (
     changes: Record<string, chrome.storage.StorageChange>,

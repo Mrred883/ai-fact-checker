@@ -2,7 +2,6 @@ import { createRoot } from 'react-dom/client'
 import { useEffect, useState, useCallback, useRef } from 'react'
 import overlayCss from './overlay.css?inline'
 import { send } from '@/lib/messaging'
-import { getSettings } from '@/lib/storage'
 
 function extractPageText(): string {
   const pick = document.querySelector('article') || document.querySelector('main') || document.body
@@ -78,10 +77,12 @@ function Selector() {
     return () => chrome.runtime.onMessage.removeListener(onMsg)
   }, [])
 
-  // auto-scan the article once on load (results open in the extension UI)
+  // auto-scan the article once on load (results open in the extension UI).
+  // The content script never reads the API key — it asks the background whether
+  // auto-scan is enabled and only then extracts page text to send for checking.
   useEffect(() => {
-    getSettings().then((s) => {
-      if (s.autoScan && s.apiKey && !autoScanned.current) {
+    send({ type: 'AUTOSCAN_QUERY' }).then((r) => {
+      if (r.ok && r.autoScan && !autoScanned.current) {
         autoScanned.current = true
         const text = extractPageText()
         if (text.length > 200) {
