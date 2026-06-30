@@ -128,7 +128,9 @@ return fact-check, sentiment, or origin results. No user content is sent to the
 developer.
 ```
 
-**Privacy policy URL:** host `store/PRIVACY.md` (see DEPLOY.md) and paste the URL here.
+**Privacy policy URL:**
+```
+https://mrred883.github.io/ai-fact-checker/store/PRIVACY
 ```
 
 ---
