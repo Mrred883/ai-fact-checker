@@ -38,13 +38,17 @@ export type Msg =
   | { type: 'STATE'; state: ListenState }
   // popup -> background : ask for current state
   | { type: 'STATE_QUERY' }
+  // content -> background : may I auto-scan this page? (key never leaves background)
+  | { type: 'AUTOSCAN_QUERY' }
+  // popup -> background : inject the selection toolbar into the active tab
+  | { type: 'ARM_TAB'; tabId: number }
   // popup -> content : toggle the on-page "scanning" animation
   | { type: 'SCAN_FX'; on: boolean }
   // content -> background : begin selection fact-check (from selection toolbar)
   | { type: 'PING' }
 
 export type MsgResponse =
-  | { ok: true; verdicts?: Verdict[]; state?: ListenState }
+  | { ok: true; verdicts?: Verdict[]; state?: ListenState; autoScan?: boolean }
   | { ok: false; error: string }
 
 /** True only when the extension context is still alive (false after a reload/update). */

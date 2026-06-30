@@ -12,6 +12,7 @@ import {
   FolderUp,
   Gauge,
   PanelRight,
+  MousePointerClick,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { VerdictCard } from '@/components/VerdictCard'
@@ -139,6 +140,7 @@ export function Popup({ inPanel = false }: { inPanel?: boolean } = {}) {
   const [sort, setSort] = useState<SortKey>('newest')
   const [tab, setTab] = useState<'feed' | 'assets' | 'sentiment'>('feed')
   const [feedTab, setFeedTab] = useState<'text' | 'audio'>('text')
+  const [armed, setArmed] = useState(false)
 
   useEffect(() => {
     getSettings().then((s) => {
@@ -243,6 +245,9 @@ export function Popup({ inPanel = false }: { inPanel?: boolean } = {}) {
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
       if (!tab?.id) throw new Error('No active tab to scan.')
       scanTabId = tab.id
+      // ensure the on-page toolbar is injected so the scan animation can render
+      await send({ type: 'ARM_TAB', tabId: tab.id })
+      setArmed(true)
       // kick off the on-page scanning sweep
       sendToTab(tab.id, { type: 'SCAN_FX', on: true })
       const [{ result } = { result: '' }] = await chrome.scripting.executeScript({
@@ -260,6 +265,15 @@ export function Popup({ inPanel = false }: { inPanel?: boolean } = {}) {
       if (scanTabId != null) sendToTab(scanTabId, { type: 'SCAN_FX', on: false })
       setBusy(false)
     }
+  }, [])
+
+  const armPage = useCallback(async () => {
+    setError(null)
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
+    if (!tab?.id) return setError('No active tab.')
+    const res = await send({ type: 'ARM_TAB', tabId: tab.id })
+    if (res.ok) setArmed(true)
+    else setError(res.error)
   }, [])
 
   const openOptions = () => chrome.runtime.openOptionsPage()
@@ -356,7 +370,7 @@ export function Popup({ inPanel = false }: { inPanel?: boolean } = {}) {
           </div>
 
           {/* controls */}
-          <div className="grid shrink-0 grid-cols-2 gap-2 p-3">
+          <div className="grid shrink-0 grid-cols-2 gap-2 px-3 pt-3">
             <Button onClick={toggleListen} variant={listen.listening ? 'destructive' : 'default'}>
               {listen.listening ? <Square className="size-4" /> : <Mic className="size-4" />}
               {listen.listening ? 'Stop' : 'Listen'}
@@ -365,6 +379,17 @@ export function Popup({ inPanel = false }: { inPanel?: boolean } = {}) {
               <ScanText className="size-4" />
               {busy ? 'Scanning…' : 'Scan page'}
             </Button>
+          </div>
+          {/* arm the on-page selection toolbar for this tab (no standing access) */}
+          <div className="px-3 pb-3 pt-2">
+            <button
+              onClick={armPage}
+              disabled={armed}
+              className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-border bg-card px-3 py-2 font-data text-[10px] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:text-foreground disabled:opacity-70"
+            >
+              <MousePointerClick className="size-3.5" />
+              {armed ? 'Highlight-to-check on for this page' : 'Enable highlight-to-check here'}
+            </button>
           </div>
 
           {listen.listening && (

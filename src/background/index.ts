@@ -8,6 +8,33 @@ const OFFSCREEN_URL = 'src/offscreen/offscreen.html'
 
 const state: ListenState = { listening: false }
 
+// tabs the user has enabled the on-page selection toolbar on (this session)
+const armedTabs = new Set<number>()
+
+/**
+ * Inject the selection toolbar into a tab on user action. Uses activeTab via
+ * scripting.executeScript, so no host permission and no static content script is
+ * needed — the extension only ever touches a page the user explicitly enables.
+ * A tiny classic stub dynamic-imports the real (ESM) content bundle.
+ */
+async function armTab(tabId: number): Promise<void> {
+  if (armedTabs.has(tabId)) return
+  // Inject the self-contained content bundle as a FILE into the isolated content
+  // world. Running via the scripting API (not as page script) means the target
+  // page's CSP cannot block it — works even on strict-CSP sites like GitHub.
+  await chrome.scripting.executeScript({
+    target: { tabId },
+    files: ['content-main.js'],
+  })
+  armedTabs.add(tabId)
+}
+
+chrome.tabs.onRemoved.addListener((tabId) => armedTabs.delete(tabId))
+// a navigation tears down the injected script — forget the tab so it can re-arm
+chrome.tabs.onUpdated.addListener((tabId, info) => {
+  if (info.status === 'loading') armedTabs.delete(tabId)
+})
+
 // ── lifecycle ──────────────────────────────────────────────────────────────
 chrome.runtime.onInstalled.addListener(() => {
   chrome.contextMenus.create({
@@ -209,6 +236,9 @@ async function stopAudio() {
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   if (info.menuItemId !== CONTEXT_MENU_ID || !info.selectionText) return
   try {
+    // the click is a user gesture on this tab → activeTab lets us inject so any
+    // result toast can render, without a standing content script
+    if (tab?.id != null) await armTab(tab.id).catch(() => {})
     const settings = await getSettings()
     if (!settings.apiKey) {
       pushToTab(tab?.id, { type: 'STATE', state: { listening: false, error: 'Add your Claude API key in settings.' } })
@@ -234,6 +264,21 @@ onMessage(async (msg, sender): Promise<MsgResponse> => {
       // popup just opened — clear the unread badge
       clearUnseen()
       return { ok: true, state: { ...state } }
+
+    case 'AUTOSCAN_QUERY': {
+      // answer the content script with a boolean only — the API key stays here,
+      // never crossing into the page-injected content world
+      const s = await getSettings()
+      return { ok: true, autoScan: Boolean(s.autoScan && s.apiKey) }
+    }
+
+    case 'ARM_TAB':
+      try {
+        await armTab(msg.tabId)
+        return { ok: true }
+      } catch (e) {
+        return { ok: false, error: e instanceof Error ? e.message : String(e) }
+      }
 
     case 'AUDIO_START':
       try {
