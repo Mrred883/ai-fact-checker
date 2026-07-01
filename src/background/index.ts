@@ -332,25 +332,24 @@ onMessage(async (msg, sender): Promise<MsgResponse> => {
         const settings = await getSettings()
         if (!settings.apiKey) return { ok: false, error: 'Add your Claude API key in settings first.' }
         const tabId = sender.tab?.id
-        let opened = false
-        // stream: show each verdict the instant its claim finishes, then persist
-        const { verdicts } = await factCheckTextStream(
-          msg.text,
-          msg.source,
-          settings,
-          (v) => {
-            previewVerdict(v, tabId)
-            // surface the UI as soon as the first verdict lands
-            if (!opened && v.source !== 'audio') {
-              opened = true
-              void openExtensionUi(0)
-            }
-          },
-          { pageUrl: msg.pageUrl },
-        )
-        // persist the final, citation-enriched set (popup dedupes by stable id)
-        await deliverVerdicts(verdicts, tabId)
-        return { ok: true, verdicts }
+        // Open the UI and show a live "checking" placeholder IMMEDIATELY, before
+        // the model has produced anything. web_search runs before any output, so
+        // without this the popup would look frozen for several seconds.
+        void openExtensionUi(0)
+        broadcastRuntime({ type: 'CHECKING', on: true, source: msg.source })
+        try {
+          const { verdicts } = await factCheckTextStream(
+            msg.text,
+            msg.source,
+            settings,
+            (v) => previewVerdict(v, tabId),
+            { pageUrl: msg.pageUrl },
+          )
+          await deliverVerdicts(verdicts, tabId)
+          return { ok: true, verdicts }
+        } finally {
+          broadcastRuntime({ type: 'CHECKING', on: false, source: msg.source })
+        }
       } catch (e) {
         return { ok: false, error: e instanceof Error ? e.message : String(e) }
       }

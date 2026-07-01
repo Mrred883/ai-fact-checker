@@ -13,6 +13,7 @@ import {
   Gauge,
   PanelRight,
   MousePointerClick,
+  Loader2,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { VerdictCard } from '@/components/VerdictCard'
@@ -119,6 +120,26 @@ function FeedTabBtn({
   )
 }
 
+function CheckingCard() {
+  return (
+    <article className="rounded-lg border border-border bg-card p-3.5 shadow-[0_1px_2px_hsl(var(--foreground)/0.05)]">
+      <div className="flex items-center gap-2.5">
+        <Loader2 className="size-4 animate-spin text-primary" />
+        <div className="min-w-0 flex-1">
+          <p className="text-[13px] font-semibold text-card-foreground">Checking claims…</p>
+          <p className="mt-0.5 text-[11px] text-muted-foreground">
+            Searching the web and weighing the evidence. Verdicts appear here.
+          </p>
+        </div>
+      </div>
+      {/* litmus track, animated as a subtle "working" cue */}
+      <div className="litmus-track mt-3 opacity-60">
+        <span className="litmus-marker animate-pulse" style={{ left: '50%' }} />
+      </div>
+    </article>
+  )
+}
+
 function FeedEmpty({ title, hint }: { title: string; hint: string }) {
   return (
     <div className="flex flex-col items-center gap-3 px-6 py-12 text-center">
@@ -141,6 +162,7 @@ export function Popup({ inPanel = false }: { inPanel?: boolean } = {}) {
   const [tab, setTab] = useState<'feed' | 'assets' | 'sentiment'>('feed')
   const [feedTab, setFeedTab] = useState<'text' | 'audio'>('text')
   const [armed, setArmed] = useState(false)
+  const [checking, setChecking] = useState(false)
 
   useEffect(() => {
     getSettings().then((s) => {
@@ -158,15 +180,20 @@ export function Popup({ inPanel = false }: { inPanel?: boolean } = {}) {
   useEffect(() => {
     const handler = (msg: Msg) => {
       if (msg.type === 'VERDICTS') {
+        setChecking(false) // first verdicts in → drop the placeholder
         setHistory((h) => {
           const have = new Set(h.map((x) => x.id))
           const add = msg.verdicts.filter((v) => !have.has(v.id))
           return add.length ? [...add, ...h].slice(0, 200) : h
         })
-        // "new" marks come from storage via onUnseenChanged (set in the background)
+      } else if (msg.type === 'CHECKING') {
+        if (msg.source !== 'audio') setChecking(msg.on)
       } else if (msg.type === 'STATE') {
         setListen(msg.state)
-        if (msg.state.error) setError(msg.state.error)
+        if (msg.state.error) {
+          setError(msg.state.error)
+          setChecking(false)
+        }
       }
     }
     chrome.runtime.onMessage.addListener(handler)
@@ -240,6 +267,8 @@ export function Popup({ inPanel = false }: { inPanel?: boolean } = {}) {
   const scanPage = useCallback(async () => {
     setError(null)
     setBusy(true)
+    setFeedTab('text')
+    setChecking(true) // instant feedback; cleared when verdicts arrive
     let scanTabId: number | undefined
     try {
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
@@ -261,6 +290,7 @@ export function Popup({ inPanel = false }: { inPanel?: boolean } = {}) {
       // history + "new" marks arrive via the VERDICTS broadcast + storage; nothing to add here
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e))
+      setChecking(false)
     } finally {
       if (scanTabId != null) sendToTab(scanTabId, { type: 'SCAN_FX', on: false })
       setBusy(false)
@@ -480,14 +510,19 @@ export function Popup({ inPanel = false }: { inPanel?: boolean } = {}) {
           {/* feed — active lane only */}
           <div className="flex-1 space-y-2.5 overflow-y-auto px-3 pb-3">
             {feedTab === 'text' ? (
-              textFacts.length > 0 ? (
-                textFacts.map((v) => <VerdictCard key={v.id} v={v} />)
-              ) : (
-                <FeedEmpty
-                  title="No text checks yet"
-                  hint="Highlight a claim, scan a page, or check an uploaded asset."
-                />
-              )
+              <>
+                {checking && <CheckingCard />}
+                {textFacts.length > 0 ? (
+                  textFacts.map((v) => <VerdictCard key={v.id} v={v} />)
+                ) : (
+                  !checking && (
+                    <FeedEmpty
+                      title="No text checks yet"
+                      hint="Highlight a claim, scan a page, or check an uploaded asset."
+                    />
+                  )
+                )}
+              </>
             ) : audioFacts.length > 0 ? (
               audioFacts.map((v) => <VerdictCard key={v.id} v={v} />)
             ) : (

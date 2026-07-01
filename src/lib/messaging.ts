@@ -20,6 +20,8 @@ export type Msg =
   | { type: 'DELIVER_VERDICTS'; verdicts: Verdict[] }
   // background -> content/popup : new verdicts ready
   | { type: 'VERDICTS'; verdicts: Verdict[]; source: Verdict['source'] }
+  // background -> popup : a text check is in progress (show a live placeholder)
+  | { type: 'CHECKING'; on: boolean; source: Verdict['source'] }
   // popup -> background : control live audio
   | { type: 'AUDIO_START'; tabId: number }
   | { type: 'AUDIO_STOP' }
