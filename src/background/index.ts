@@ -17,16 +17,50 @@ const armedTabs = new Set<number>()
  * needed — the extension only ever touches a page the user explicitly enables.
  * A tiny classic stub dynamic-imports the real (ESM) content bundle.
  */
-async function armTab(tabId: number): Promise<void> {
-  if (armedTabs.has(tabId)) return
-  // Inject the self-contained content bundle as a FILE into the isolated content
-  // world. Running via the scripting API (not as page script) means the target
-  // page's CSP cannot block it — works even on strict-CSP sites like GitHub.
-  await chrome.scripting.executeScript({
-    target: { tabId },
-    files: ['content-main.js'],
-  })
-  armedTabs.add(tabId)
+/** URLs Chrome refuses to let any extension inject into. */
+function isRestrictedUrl(url?: string): boolean {
+  if (!url) return true
+  return (
+    /^(chrome|edge|brave|about|chrome-extension|view-source|devtools):/i.test(url) ||
+    /^https:\/\/chromewebstore\.google\.com/i.test(url) ||
+    /^https:\/\/chrome\.google\.com\/webstore/i.test(url)
+  )
+}
+
+/**
+ * Inject the selection toolbar into a tab on user action. Uses activeTab via
+ * scripting.executeScript, so no host permission and no static content script is
+ * needed. Injects into ALL frames so selections inside embeds are covered.
+ * Returns an error string when the page can't be accessed (chrome:// pages,
+ * the web store, PDFs), instead of failing silently.
+ */
+async function armTab(tabId: number): Promise<string | null> {
+  if (armedTabs.has(tabId)) return null
+  let tab: chrome.tabs.Tab | undefined
+  try {
+    tab = await chrome.tabs.get(tabId)
+  } catch {
+    return 'That tab is no longer available.'
+  }
+  if (isRestrictedUrl(tab?.url)) {
+    return "This page can't be checked. Open a normal website and try again."
+  }
+  try {
+    // all frames + CSP-immune (injected as a file via the scripting API)
+    await chrome.scripting.executeScript({
+      target: { tabId, allFrames: true },
+      files: ['content-main.js'],
+    })
+    armedTabs.add(tabId)
+    return null
+  } catch (e) {
+    // some pages (PDF viewer, restricted embeds) still reject injection
+    const msg = e instanceof Error ? e.message : String(e)
+    if (/cannot be scripted|Cannot access|extensions gallery|showing error page/i.test(msg)) {
+      return "This page can't be checked. Open a normal website and try again."
+    }
+    return `Couldn't enable checking on this page: ${msg}`
+  }
 }
 
 chrome.tabs.onRemoved.addListener((tabId) => armedTabs.delete(tabId))
@@ -239,8 +273,9 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   if (info.menuItemId !== CONTEXT_MENU_ID || !info.selectionText) return
   try {
     // the click is a user gesture on this tab → activeTab lets us inject so any
-    // result toast can render, without a standing content script
-    if (tab?.id != null) await armTab(tab.id).catch(() => {})
+    // result toast can render. Ignore inject failures on restricted pages; the
+    // check still runs and results show in the popup.
+    if (tab?.id != null) await armTab(tab.id)
     const settings = await getSettings()
     if (!settings.apiKey) {
       pushToTab(tab?.id, { type: 'STATE', state: { listening: false, error: 'Add your Claude API key in settings.' } })
@@ -275,13 +310,11 @@ onMessage(async (msg, sender): Promise<MsgResponse> => {
       return { ok: true, autoScan: Boolean(s.autoScan && s.apiKey) }
     }
 
-    case 'ARM_TAB':
-      try {
-        await armTab(msg.tabId)
-        return { ok: true, armed: true }
-      } catch (e) {
-        return { ok: false, error: e instanceof Error ? e.message : String(e) }
-      }
+    case 'ARM_TAB': {
+      const err = await armTab(msg.tabId)
+      if (err) return { ok: false, error: err }
+      return { ok: true, armed: true }
+    }
 
     case 'ARM_QUERY':
       // popup asks whether THIS tab is currently armed, so the button reflects
