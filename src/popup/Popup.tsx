@@ -73,7 +73,7 @@ function TabBtn({
     <button
       onClick={onClick}
       className={cn(
-        'flex items-center gap-1.5 rounded-t-md border-b-2 px-2.5 pb-1.5 pt-1 font-data text-[10px] font-semibold uppercase tracking-[0.14em] transition-colors',
+        'flex flex-1 items-center justify-center gap-1.5 rounded-t-md border-b-2 px-2 pb-1.5 pt-1 font-data text-[10px] font-semibold uppercase tracking-[0.14em] transition-colors',
         active
           ? 'border-primary text-foreground'
           : 'border-transparent text-muted-foreground hover:text-foreground',
