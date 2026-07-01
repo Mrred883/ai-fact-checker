@@ -1,6 +1,8 @@
 node_modules
 dist
+dist.zip
 web-store
+*.zip
 .DS_Store
 *.local
 .vite
