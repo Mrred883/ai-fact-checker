@@ -60,6 +60,20 @@ function clearUnseen() {
   chrome.action.setBadgeText({ text: '' }).catch(() => {})
 }
 
+/** Open the docked side panel for a tab, so on-page checks surface a visible UI. */
+async function openSidePanelForTab(tabId: number) {
+  try {
+    const tab = await chrome.tabs.get(tabId)
+    const sp = chrome.sidePanel as unknown as {
+      open?: (o: { windowId?: number; tabId?: number }) => Promise<void>
+    }
+    if (tab.windowId != null) await sp.open?.({ windowId: tab.windowId })
+    else await sp.open?.({ tabId })
+  } catch {
+    // gesture expired or unsupported — the badge is the fallback cue
+  }
+}
+
 async function deliverVerdicts(verdicts: Verdict[], tabId?: number) {
   if (!verdicts.length) return
   await addToHistory(verdicts)
@@ -298,9 +312,12 @@ onMessage(async (msg, sender): Promise<MsgResponse> => {
         const settings = await getSettings()
         if (!settings.apiKey) return { ok: false, error: 'Add your Claude API key in settings first.' }
         const tabId = sender.tab?.id
-        // Open the UI and show a live "checking" placeholder IMMEDIATELY, before
-        // the model has produced anything. web_search runs before any output, so
-        // without this the popup would look frozen for several seconds.
+        // A check started from the on-page pill (sender.tab is set) has a fresh
+        // user gesture — open the side panel now so the result is visible without
+        // the user hunting for the toolbar icon. The panel shows "Checking…" then
+        // the verdict streams in. Popups can't be reliably force-opened; the
+        // panel can, and it stays open.
+        if (tabId != null) void openSidePanelForTab(tabId)
         void openExtensionUi(0)
         checksInFlight++
         broadcastRuntime({ type: 'CHECKING', on: true, source: msg.source })
