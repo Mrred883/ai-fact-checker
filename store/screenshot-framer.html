@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AI Fact Checker — Screenshot Framer</title>
+    <style>
+      /* Litmus palette, matching the extension */
+      :root {
+        --paper: #eef1f4;
+        --ink: #16202a;
+        --muted: #5c6a70;
+        --teal: #25617a;
+        --false: #e5484d;
+        --mid: #f5a524;
+        --true: #1f9254;
+        --card: #ffffff;
+        --border: #dce0e3;
+      }
+      * { box-sizing: border-box; margin: 0; }
+      body {
+        font-family: "IBM Plex Sans", ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif;
+        background: #20272e;
+        color: var(--ink);
+        padding: 24px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 18px;
+      }
+      .controls {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        flex-wrap: wrap;
+        color: #cdd6db;
+        font-size: 13px;
+      }
+      .controls input[type="text"] {
+        width: 320px;
+        padding: 7px 10px;
+        border-radius: 8px;
+        border: 1px solid #3a454d;
+        background: #171e22;
+        color: #e5eaec;
+        font-size: 13px;
+      }
+      button {
+        padding: 8px 14px;
+        border: 0;
+        border-radius: 8px;
+        background: var(--teal);
+        color: #fff;
+        font-weight: 600;
+        font-size: 13px;
+        cursor: pointer;
+      }
+      button:hover { background: #1d4f63; }
+
+      /* the exact 1280x800 export canvas */
+      #frame {
+        width: 1280px;
+        height: 800px;
+        position: relative;
+        overflow: hidden;
+        background:
+          radial-gradient(1100px 620px at 78% -10%, #ffffff 0%, var(--paper) 55%, #e2e7eb 100%);
+        transform-origin: top center;
+      }
+      /* subtle litmus rule across the top */
+      #frame::before {
+        content: "";
+        position: absolute;
+        left: 0; right: 0; top: 0; height: 4px;
+        background: linear-gradient(90deg, var(--false) 0%, var(--mid) 50%, var(--true) 100%);
+      }
+      .stage {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        grid-template-columns: 1fr 480px;
+        align-items: center;
+        gap: 40px;
+        padding: 0 88px;
+      }
+      .copy { max-width: 560px; }
+      .brand {
+        display: flex; align-items: center; gap: 12px; margin-bottom: 22px;
+      }
+      .mark { width: 64px; height: 26px; }
+      .brand h1 {
+        font-family: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+        font-size: 26px; font-weight: 700; letter-spacing: -0.01em;
+      }
+      .headline {
+        font-family: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+        font-size: 46px; line-height: 1.08; font-weight: 700; letter-spacing: -0.02em;
+      }
+      .headline .hl { color: var(--teal); }
+      .sub { margin-top: 18px; font-size: 19px; line-height: 1.5; color: var(--muted); }
+      .eyebrow {
+        font-family: "IBM Plex Mono", ui-monospace, monospace;
+        font-size: 11px; text-transform: uppercase; letter-spacing: 0.2em;
+        color: var(--teal); margin-bottom: 14px;
+      }
+      .shot {
+        justify-self: center;
+        border-radius: 18px;
+        overflow: hidden;
+        background: var(--card);
+        border: 1px solid var(--border);
+        box-shadow: 0 40px 90px -30px rgba(15,23,42,.45), 0 8px 24px -12px rgba(15,23,42,.25);
+        max-width: 460px;
+      }
+      .shot img { display: block; width: 100%; height: auto; }
+      .shot.empty {
+        width: 400px; height: 560px;
+        display: grid; place-items: center;
+        color: var(--muted); font-size: 13px; text-align: center; padding: 20px;
+        border-style: dashed;
+      }
+      .hint { color: #96a1a8; font-size: 12px; max-width: 1000px; text-align: center; line-height: 1.5; }
+      .scaleNote { color: #7f8b92; font-size: 11px; }
+    </style>
+  </head>
+  <body>
+    <div class="controls">
+      <label>Screenshot: <input type="file" id="file" accept="image/png,image/jpeg" /></label>
+      <input type="text" id="eyebrow" value="REAL-TIME FACT CHECKING" />
+      <input type="text" id="headline" value="Know what's true, as you read." />
+      <input type="text" id="sub" value="Verify text, live video audio, and files with Claude and web search." />
+      <button id="dl">Download 1280×800 PNG</button>
+    </div>
+    <p class="scaleNote">Preview scaled to fit your screen — the export is always exactly 1280×800.</p>
+
+    <div id="frame">
+      <div class="stage">
+        <div class="copy">
+          <div class="brand">
+            <svg class="mark" viewBox="0 0 64 26" fill="none" aria-hidden="true">
+              <defs>
+                <linearGradient id="g" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0" stop-color="#e5484d" />
+                  <stop offset="0.5" stop-color="#f5a524" />
+                  <stop offset="1" stop-color="#1f9254" />
+                </linearGradient>
+              </defs>
+              <rect x="0" y="9" width="64" height="8" rx="4" fill="url(#g)" />
+              <rect x="50" y="2" width="4" height="22" rx="2" fill="#16202a" />
+            </svg>
+            <h1>AI Fact Checker</h1>
+          </div>
+          <div class="eyebrow" id="o-eyebrow">REAL-TIME FACT CHECKING</div>
+          <div class="headline" id="o-headline">Know what's <span class="hl">true</span>, as you read.</div>
+          <div class="sub" id="o-sub">Verify text, live video audio, and files with Claude and web search.</div>
+        </div>
+        <div class="shot empty" id="shot">
+          Drop a popup or side-panel screenshot above.<br />It gets framed here.
+        </div>
+      </div>
+    </div>
+
+    <p class="hint">
+      Tip: capture the extension popup or side panel (any size). This tool centers it on the branded
+      1280×800 canvas the Web Store expects. Change the eyebrow/headline per shot, then Download.
+      Make 3–5 with different screenshots and captions.
+    </p>
+
+    <script>
+      const $ = (id) => document.getElementById(id)
+      const frame = $('frame')
+
+      // scale the 1280px frame down to fit the viewport for preview
+      function fit() {
+        const scale = Math.min(1, (window.innerWidth - 60) / 1280)
+        frame.style.transform = `scale(${scale})`
+        frame.style.marginBottom = `${-800 * (1 - scale)}px`
+      }
+      window.addEventListener('resize', fit)
+      fit()
+
+      $('file').addEventListener('change', (e) => {
+        const f = e.target.files?.[0]
+        if (!f) return
+        const url = URL.createObjectURL(f)
+        const shot = $('shot')
+        shot.className = 'shot'
+        shot.innerHTML = ''
+        const img = new Image()
+        img.onload = () => URL.revokeObjectURL(url)
+        img.src = url
+        shot.appendChild(img)
+      })
+
+      const bind = (input, out, isHeadline) => {
+        $(input).addEventListener('input', (e) => {
+          const v = e.target.value
+          if (isHeadline) {
+            // wrap the word "true" in the accent color if present
+            $(out).innerHTML = v.replace(/\btrue\b/i, (m) => `<span class="hl">${m}</span>`)
+          } else {
+            $(out).textContent = v
+          }
+        })
+      }
+      bind('eyebrow', 'o-eyebrow', false)
+      bind('headline', 'o-headline', true)
+      bind('sub', 'o-sub', false)
+
+      // Export using the browser's built-in rendering via SVG foreignObject → canvas.
+      $('dl').addEventListener('click', async () => {
+        const clone = frame.cloneNode(true)
+        clone.style.transform = 'none'
+        clone.style.margin = '0'
+        const html = clone.outerHTML
+        const svg =
+          `<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="800">` +
+          `<foreignObject width="1280" height="800">` +
+          `<div xmlns="http://www.w3.org/1999/xhtml">${html}</div>` +
+          `</foreignObject></svg>`
+        const img = new Image()
+        img.onload = () => {
+          const c = document.createElement('canvas')
+          c.width = 1280; c.height = 800
+          c.getContext('2d').drawImage(img, 0, 0)
+          const a = document.createElement('a')
+          a.download = 'screenshot-1280x800.png'
+          a.href = c.toDataURL('image/png')
+          a.click()
+        }
+        img.onerror = () =>
+          alert(
+            'Export blocked (the embedded screenshot taints the canvas in some browsers).\n' +
+            'Fallback: press the OS screenshot key on the framed preview above, or use any\n' +
+            '1280×800 crop of it. The layout is already the exact export size.',
+          )
+        img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg)
+      })
+    </script>
+  </body>
+</html>
