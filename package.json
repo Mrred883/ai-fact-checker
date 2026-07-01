@@ -1,6 +1,6 @@
 {
   "name": "ai-fact-checker",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "AI fact-checker Chrome extension. Live audio and selected text, grounded in live web search via Claude.",
   "type": "module",
   "scripts": {

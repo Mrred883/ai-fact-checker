@@ -60,19 +60,6 @@ function clearUnseen() {
   chrome.action.setBadgeText({ text: '' }).catch(() => {})
 }
 
-/** Open the docked side panel for a tab, so on-page checks surface a visible UI. */
-async function openSidePanelForTab(tabId: number) {
-  try {
-    const tab = await chrome.tabs.get(tabId)
-    const sp = chrome.sidePanel as unknown as {
-      open?: (o: { windowId?: number; tabId?: number }) => Promise<void>
-    }
-    if (tab.windowId != null) await sp.open?.({ windowId: tab.windowId })
-    else await sp.open?.({ tabId })
-  } catch {
-    // gesture expired or unsupported — the badge is the fallback cue
-  }
-}
 
 async function deliverVerdicts(verdicts: Verdict[], tabId?: number) {
   if (!verdicts.length) return
@@ -245,6 +232,16 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
 
 // ── message router ───────────────────────────────────────────────────────────
 onMessage(async (msg, sender): Promise<MsgResponse> => {
+  // Open the side panel as the FIRST thing, synchronously, before any await —
+  // chrome.sidePanel.open() only works while the content-script user gesture is
+  // still on the stack, so it must not sit behind getSettings() etc.
+  if (msg.type === 'FACTCHECK_TEXT' && sender.tab?.windowId != null) {
+    const sp = chrome.sidePanel as unknown as {
+      open?: (o: { windowId: number }) => Promise<void>
+    }
+    sp.open?.({ windowId: sender.tab.windowId }).catch(() => {})
+  }
+
   switch (msg.type) {
     case 'STATE_QUERY':
       // popup just opened — clear the unread badge, and tell it if a check is
@@ -312,12 +309,8 @@ onMessage(async (msg, sender): Promise<MsgResponse> => {
         const settings = await getSettings()
         if (!settings.apiKey) return { ok: false, error: 'Add your Claude API key in settings first.' }
         const tabId = sender.tab?.id
-        // A check started from the on-page pill (sender.tab is set) has a fresh
-        // user gesture — open the side panel now so the result is visible without
-        // the user hunting for the toolbar icon. The panel shows "Checking…" then
-        // the verdict streams in. Popups can't be reliably force-opened; the
-        // panel can, and it stays open.
-        if (tabId != null) void openSidePanelForTab(tabId)
+        // (the side panel was already opened synchronously at the top of the
+        // message listener, while the pill's user gesture was still valid)
         void openExtensionUi(0)
         checksInFlight++
         broadcastRuntime({ type: 'CHECKING', on: true, source: msg.source })
