@@ -29,10 +29,17 @@ export default defineManifest({
     service_worker: 'src/background/index.ts',
     type: 'module',
   },
-  // No static content script and no broad host access. The selection toolbar is
-  // injected on demand into the active tab only when the user enables it, via
-  // activeTab + scripting (see background `armTab`). The extension never touches
-  // a page unprompted, so it needs no <all_urls> host permission.
+  // A standing content script on every page powers the highlight-to-check
+  // selection toolbar consistently across all sites, with no per-tab enable step
+  // and no difference between the popup and the side panel.
+  content_scripts: [
+    {
+      matches: ['<all_urls>'],
+      js: ['src/content/index.tsx'],
+      run_at: 'document_idle',
+      all_frames: true,
+    },
+  ],
   permissions: [
     'storage',
     'activeTab',
@@ -42,15 +49,11 @@ export default defineManifest({
     'contextMenus',
     'sidePanel',
   ],
-  host_permissions: ['https://api.anthropic.com/*'],
-  // Block injected/remote code and eval in our own pages — defends the API key
-  // against script-injection theft and satisfies Web Store review.
+  // Read selected/page text on any site the user checks, plus call the Claude API.
+  host_permissions: ['<all_urls>'],
   content_security_policy: {
     extension_pages: "script-src 'self'; object-src 'self'; base-uri 'self'",
   },
-  // Only the offscreen doc needs to be web-accessible. The content script is
-  // injected via scripting.executeScript({ files }) on user action, so it does
-  // NOT need to be web-accessible — keeping the page's reach to our files minimal.
   web_accessible_resources: [
     {
       resources: ['src/offscreen/offscreen.html'],

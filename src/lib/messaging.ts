@@ -42,19 +42,13 @@ export type Msg =
   | { type: 'STATE_QUERY' }
   // content -> background : may I auto-scan this page? (key never leaves background)
   | { type: 'AUTOSCAN_QUERY' }
-  // popup -> background : inject the selection toolbar into the active tab.
-  // tabId optional — background resolves the focused tab when omitted (more
-  // reliable from a pinned popup / side panel where window queries are ambiguous)
-  | { type: 'ARM_TAB'; tabId?: number }
-  // popup -> background : is the active tab already armed for highlight-to-check?
-  | { type: 'ARM_QUERY'; tabId?: number }
   // popup -> content : toggle the on-page "scanning" animation
   | { type: 'SCAN_FX'; on: boolean }
   // content -> background : begin selection fact-check (from selection toolbar)
   | { type: 'PING' }
 
 export type MsgResponse =
-  | { ok: true; verdicts?: Verdict[]; state?: ListenState; autoScan?: boolean; checking?: boolean; armed?: boolean }
+  | { ok: true; verdicts?: Verdict[]; state?: ListenState; autoScan?: boolean; checking?: boolean }
   | { ok: false; error: string }
 
 /** True only when the extension context is still alive (false after a reload/update). */

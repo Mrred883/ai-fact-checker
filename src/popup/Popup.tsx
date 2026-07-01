@@ -12,7 +12,6 @@ import {
   FolderUp,
   Gauge,
   PanelRight,
-  MousePointerClick,
   Loader2,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -178,7 +177,6 @@ export function Popup({ inPanel = false }: { inPanel?: boolean } = {}) {
   const [sort, setSort] = useState<SortKey>('newest')
   const [tab, setTab] = useState<'feed' | 'assets' | 'sentiment'>('feed')
   const [feedTab, setFeedTab] = useState<'text' | 'audio'>('text')
-  const [armed, setArmed] = useState(false)
   const [checking, setChecking] = useState(false)
 
   useEffect(() => {
@@ -192,18 +190,6 @@ export function Popup({ inPanel = false }: { inPanel?: boolean } = {}) {
       if (r.state) setListen(r.state)
       if (r.checking) setChecking(true) // a check was already running when we opened
     })
-    // reflect whether the active tab is already armed (a new page resets this).
-    // Re-check on tab switch or navigation so the side panel (which stays open)
-    // resets the button back to "enable" for each new page.
-    const refreshArmed = () =>
-      send({ type: 'ARM_QUERY' }).then((r) => setArmed(!!(r.ok && r.armed)))
-    refreshArmed()
-    const onActivated = () => refreshArmed()
-    const onUpdated = (_id: number, info: chrome.tabs.TabChangeInfo) => {
-      if (info.status === 'loading' || info.status === 'complete') refreshArmed()
-    }
-    chrome.tabs.onActivated.addListener(onActivated)
-    chrome.tabs.onUpdated.addListener(onUpdated)
     const offSettings = onSettingsChanged((s) => {
       setSettings(s)
       applyTheme(s.theme)
@@ -217,8 +203,6 @@ export function Popup({ inPanel = false }: { inPanel?: boolean } = {}) {
     return () => {
       offSettings()
       offHistory()
-      chrome.tabs.onActivated.removeListener(onActivated)
-      chrome.tabs.onUpdated.removeListener(onUpdated)
     }
   }, [])
 
@@ -319,10 +303,7 @@ export function Popup({ inPanel = false }: { inPanel?: boolean } = {}) {
       const tab = await getActiveTab()
       if (!tab?.id) throw new Error('No active tab to scan.')
       scanTabId = tab.id
-      // ensure the on-page toolbar is injected so the scan animation can render
-      await send({ type: 'ARM_TAB', tabId: tab.id })
-      setArmed(true)
-      // kick off the on-page scanning sweep
+      // kick off the on-page scanning sweep (content script is always present)
       sendToTab(tab.id, { type: 'SCAN_FX', on: true })
       const [{ result } = { result: '' }] = await chrome.scripting.executeScript({
         target: { tabId: tab.id },
@@ -340,15 +321,6 @@ export function Popup({ inPanel = false }: { inPanel?: boolean } = {}) {
       if (scanTabId != null) sendToTab(scanTabId, { type: 'SCAN_FX', on: false })
       setBusy(false)
     }
-  }, [])
-
-  const armPage = useCallback(async () => {
-    setError(null)
-    // let the background resolve the focused page tab — reliable whether we're a
-    // pinned popup, a detached popup window, or the side panel
-    const res = await send({ type: 'ARM_TAB' })
-    if (res.ok) setArmed(true)
-    else setError(res.error)
   }, [])
 
   const openOptions = () => chrome.runtime.openOptionsPage()
@@ -444,24 +416,15 @@ export function Popup({ inPanel = false }: { inPanel?: boolean } = {}) {
             <Stat label="Flagged" value={metrics.flagged} />
           </div>
 
-          {/* controls — three evenly spaced actions */}
-          <div className="grid shrink-0 grid-cols-3 gap-2 px-3 py-3">
+          {/* controls — two evenly spaced actions (highlight works on every page) */}
+          <div className="grid shrink-0 grid-cols-2 gap-2 px-3 py-3">
             <Button onClick={toggleListen} variant={listen.listening ? 'destructive' : 'default'}>
               {listen.listening ? <Square className="size-4" /> : <Mic className="size-4" />}
               {listen.listening ? 'Stop' : 'Listen'}
             </Button>
             <Button variant="outline" onClick={scanPage} disabled={busy}>
               <ScanText className="size-4" />
-              {busy ? 'Scanning…' : 'Scan'}
-            </Button>
-            <Button
-              variant="outline"
-              onClick={armPage}
-              disabled={armed}
-              title={armed ? 'Highlight-to-check is on for this page' : 'Enable highlight-to-check on this page'}
-            >
-              <MousePointerClick className="size-4" />
-              {armed ? 'On' : 'Highlight'}
+              {busy ? 'Scanning…' : 'Scan page'}
             </Button>
           </div>
 
