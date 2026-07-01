@@ -35,6 +35,23 @@ function extractPageText(): string {
   return text.replace(/\s+\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim().slice(0, 9000)
 }
 
+/**
+ * The tab the user is looking at. From a pinned popup or side panel,
+ * `currentWindow` can resolve to our own surface, so prefer the last-focused
+ * normal window and fall back.
+ */
+async function getActiveTab(): Promise<chrome.tabs.Tab | undefined> {
+  for (const q of [
+    { active: true, lastFocusedWindow: true },
+    { active: true, currentWindow: true },
+    { active: true },
+  ] as chrome.tabs.QueryInfo[]) {
+    const [t] = await chrome.tabs.query(q).catch(() => [])
+    if (t?.id != null) return t
+  }
+  return undefined
+}
+
 type SortKey = 'newest' | 'oldest' | 'az' | 'za'
 
 const SORT_OPTIONS: { value: SortKey; label: string }[] = [
@@ -179,10 +196,7 @@ export function Popup({ inPanel = false }: { inPanel?: boolean } = {}) {
     // Re-check on tab switch or navigation so the side panel (which stays open)
     // resets the button back to "enable" for each new page.
     const refreshArmed = () =>
-      chrome.tabs.query({ active: true, currentWindow: true }).then(([t]) => {
-        if (t?.id != null) send({ type: 'ARM_QUERY', tabId: t.id }).then((r) => setArmed(!!(r.ok && r.armed)))
-        else setArmed(false)
-      })
+      send({ type: 'ARM_QUERY' }).then((r) => setArmed(!!(r.ok && r.armed)))
     refreshArmed()
     const onActivated = () => refreshArmed()
     const onUpdated = (_id: number, info: chrome.tabs.TabChangeInfo) => {
@@ -275,7 +289,7 @@ export function Popup({ inPanel = false }: { inPanel?: boolean } = {}) {
       await send({ type: 'AUDIO_STOP' })
       return
     }
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
+    const tab = await getActiveTab()
     if (!tab?.id) return setError('No active tab to listen to.')
     const res = await send({ type: 'AUDIO_START', tabId: tab.id })
     if (!res.ok) return setError(res.error)
@@ -302,7 +316,7 @@ export function Popup({ inPanel = false }: { inPanel?: boolean } = {}) {
     setChecking(true) // instant feedback; cleared when verdicts arrive
     let scanTabId: number | undefined
     try {
-      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
+      const tab = await getActiveTab()
       if (!tab?.id) throw new Error('No active tab to scan.')
       scanTabId = tab.id
       // ensure the on-page toolbar is injected so the scan animation can render
@@ -330,9 +344,9 @@ export function Popup({ inPanel = false }: { inPanel?: boolean } = {}) {
 
   const armPage = useCallback(async () => {
     setError(null)
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
-    if (!tab?.id) return setError('No active tab.')
-    const res = await send({ type: 'ARM_TAB', tabId: tab.id })
+    // let the background resolve the focused page tab — reliable whether we're a
+    // pinned popup, a detached popup window, or the side panel
+    const res = await send({ type: 'ARM_TAB' })
     if (res.ok) setArmed(true)
     else setError(res.error)
   }, [])
@@ -342,7 +356,7 @@ export function Popup({ inPanel = false }: { inPanel?: boolean } = {}) {
   // dock the UI into Chrome's side panel — stays open while you click the video
   const openPanel = useCallback(async () => {
     try {
-      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
+      const tab = await getActiveTab()
       const sp = chrome.sidePanel as unknown as {
         open?: (o: { tabId?: number; windowId?: number }) => Promise<void>
       }

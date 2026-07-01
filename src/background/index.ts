@@ -63,6 +63,25 @@ async function armTab(tabId: number): Promise<string | null> {
   }
 }
 
+/**
+ * Find the tab the user is actually looking at. A pinned popup or side panel is
+ * its own surface, so `currentWindow` can resolve to it instead of the page.
+ * Query the last-focused normal window, then fall back, and skip our own pages.
+ */
+async function resolveActiveTabId(): Promise<number | undefined> {
+  const tries: chrome.tabs.QueryInfo[] = [
+    { active: true, lastFocusedWindow: true },
+    { active: true, currentWindow: true },
+    { active: true },
+  ]
+  for (const q of tries) {
+    const tabs = await chrome.tabs.query(q).catch(() => [])
+    const t = tabs.find((x) => x.id != null && !isRestrictedUrl(x.url))
+    if (t?.id != null) return t.id
+  }
+  return undefined
+}
+
 chrome.tabs.onRemoved.addListener((tabId) => armedTabs.delete(tabId))
 // a navigation tears down the injected script — forget the tab so it can re-arm
 chrome.tabs.onUpdated.addListener((tabId, info) => {
@@ -311,15 +330,24 @@ onMessage(async (msg, sender): Promise<MsgResponse> => {
     }
 
     case 'ARM_TAB': {
-      const err = await armTab(msg.tabId)
+      // resolve the target tab in the background (reliable from a pinned popup /
+      // side panel, where the popup's own window/tab queries are ambiguous)
+      let tabId = msg.tabId
+      if (tabId == null) {
+        tabId = await resolveActiveTabId()
+        if (tabId == null) return { ok: false, error: 'No active tab to enable checking on.' }
+      }
+      const err = await armTab(tabId)
       if (err) return { ok: false, error: err }
       return { ok: true, armed: true }
     }
 
-    case 'ARM_QUERY':
-      // popup asks whether THIS tab is currently armed, so the button reflects
+    case 'ARM_QUERY': {
+      // popup asks whether the active tab is armed, so the button reflects
       // reality (a new page or navigation resets it back to "enable")
-      return { ok: true, armed: armedTabs.has(msg.tabId) }
+      const qId = msg.tabId ?? (await resolveActiveTabId())
+      return { ok: true, armed: qId != null && armedTabs.has(qId) }
+    }
 
     case 'AUDIO_START':
       try {
