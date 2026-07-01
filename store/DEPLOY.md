@@ -15,7 +15,7 @@ A step-by-step checklist to publish publicly.
 A privacy policy URL is **mandatory** for this extension (it handles user content
 and keys). Easiest free option — GitHub Pages:
 
-1. The policy lives at `store/PRIVACY.md` in the repo.
+1. The policy lives at `store/PRIVACY.html` in the repo (a styled page).
 2. Enable Pages: repo → Settings → Pages → Build from `main` branch.
    The file will be served at:
    `https://Mrred883.github.io/ai-fact-checker/store/PRIVACY.html`

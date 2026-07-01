@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Privacy Policy — AI Fact Checker</title>
+    <meta
+      name="description"
+      content="Privacy policy for the AI Fact Checker browser extension. Your keys and history stay in your browser."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #eef1f4;
+        --card: #ffffff;
+        --ink: #16202a;
+        --muted: #5c6a70;
+        --soft: #7f8b92;
+        --border: #dce0e3;
+        --teal: #25617a;
+        --false: #e5484d;
+        --mid: #f5a524;
+        --true: #1f9254;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #10171c;
+          --card: #171e22;
+          --ink: #e7edf0;
+          --muted: #9aa7ae;
+          --soft: #7d8991;
+          --border: #28323a;
+          --teal: #4d92c4;
+        }
+      }
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      html { scroll-behavior: smooth; }
+      body {
+        font-family: "IBM Plex Sans", ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif;
+        background: radial-gradient(1100px 700px at 80% -10%, rgba(37, 97, 122, 0.06), transparent 60%),
+          var(--bg);
+        color: var(--ink);
+        line-height: 1.6;
+        min-height: 100vh;
+      }
+      .wrap { max-width: 760px; margin: 0 auto; padding: 56px 24px 96px; }
+
+      /* masthead */
+      .top { display: flex; align-items: center; gap: 14px; margin-bottom: 8px; }
+      .mark { width: 68px; height: 27px; flex: 0 0 auto; }
+      .brand {
+        font-family: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+        font-size: 22px; font-weight: 700; letter-spacing: -0.01em;
+      }
+      .rule {
+        height: 4px; border-radius: 3px; margin: 22px 0 40px;
+        background: linear-gradient(90deg, var(--false), var(--mid), var(--true));
+      }
+      h1 {
+        font-family: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+        font-size: 40px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.1;
+      }
+      .updated {
+        font-family: "IBM Plex Mono", ui-monospace, monospace;
+        font-size: 12px; color: var(--soft); margin-top: 12px;
+        text-transform: uppercase; letter-spacing: 0.12em;
+      }
+      .lede { font-size: 18px; color: var(--muted); margin-top: 22px; }
+
+      .card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 24px 26px;
+        margin-top: 22px;
+      }
+      h2 {
+        font-family: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+        font-size: 17px; font-weight: 700; letter-spacing: -0.01em;
+        display: flex; align-items: center; gap: 9px;
+      }
+      h2 .dot {
+        width: 8px; height: 8px; border-radius: 2px; flex: 0 0 auto;
+      }
+      .dot.t { background: var(--true); }
+      .dot.m { background: var(--mid); }
+      .dot.f { background: var(--false); }
+      .dot.k { background: var(--teal); }
+      h3 { font-size: 14px; font-weight: 600; margin-top: 18px; color: var(--ink); }
+      p { margin-top: 12px; color: var(--muted); }
+      .card > p:first-of-type { margin-top: 14px; }
+      ul { margin: 12px 0 0 0; padding: 0; list-style: none; }
+      li {
+        position: relative; padding-left: 20px; margin-top: 9px; color: var(--muted);
+      }
+      li::before {
+        content: ""; position: absolute; left: 2px; top: 10px;
+        width: 6px; height: 6px; border-radius: 50%; background: var(--teal);
+      }
+      strong { color: var(--ink); font-weight: 600; }
+      a { color: var(--teal); text-decoration: none; font-weight: 500; }
+      a:hover { text-decoration: underline; }
+      code {
+        font-family: "IBM Plex Mono", ui-monospace, monospace;
+        font-size: 0.9em; background: rgba(37, 97, 122, 0.1);
+        padding: 1px 6px; border-radius: 5px; color: var(--teal);
+      }
+      .pill {
+        display: inline-block; font-family: "IBM Plex Mono", monospace;
+        font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em;
+        padding: 3px 9px; border-radius: 999px; margin-left: 8px;
+      }
+      .pill.req { background: rgba(31, 146, 84, 0.14); color: var(--true); }
+      .pill.opt { background: rgba(245, 165, 36, 0.16); color: #b06a08; }
+      .foot {
+        margin-top: 40px; text-align: center; color: var(--soft); font-size: 13px;
+      }
+      .foot a { color: var(--soft); text-decoration: underline; }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="top">
+        <svg class="mark" viewBox="0 0 68 27" fill="none" aria-hidden="true">
+          <defs>
+            <linearGradient id="g" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0" stop-color="#e5484d" />
+              <stop offset="0.5" stop-color="#f5a524" />
+              <stop offset="1" stop-color="#1f9254" />
+            </linearGradient>
+          </defs>
+          <rect x="0" y="9.5" width="68" height="8" rx="4" fill="url(#g)" />
+          <rect x="53" y="2.5" width="4" height="22" rx="2" fill="currentColor" />
+        </svg>
+        <span class="brand">AI Fact Checker</span>
+      </div>
+
+      <div class="rule"></div>
+
+      <h1>Privacy Policy</h1>
+      <p class="updated">Last updated: 25 June 2026</p>
+      <p class="lede">
+        AI Fact Checker is a browser extension that checks text, audio, and files using AI services
+        you connect with your own API keys. This page explains exactly what data the extension
+        handles and where it goes.
+      </p>
+
+      <div class="card">
+        <h2><span class="dot t"></span>The short version</h2>
+        <ul>
+          <li>The extension has <strong>no server of its own</strong>. Nothing is sent to the developer.</li>
+          <li>
+            Your API keys and your check history are stored <strong>only in your browser</strong> and
+            never leave your device, except to call the AI providers you set up.
+          </li>
+          <li>
+            Content you choose to check is sent <strong>directly from your browser</strong> to the AI
+            providers listed below, and only when you start a check.
+          </li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h2><span class="dot k"></span>What is stored on your device</h2>
+        <p>Saved in your browser only, using local extension storage:</p>
+        <ul>
+          <li><strong>Your API keys</strong> (an Anthropic Claude key, and an optional Deepgram key).</li>
+          <li><strong>Settings</strong> such as model choice, sensitivity, language, and theme.</li>
+          <li>
+            <strong>Check history</strong>, meaning the claims, verdicts, and uploaded files you have
+            checked, so you can review them.
+          </li>
+        </ul>
+        <p>
+          You can clear history and remove files from inside the extension at any time. Uninstalling
+          the extension removes all of this local data.
+        </p>
+      </div>
+
+      <div class="card">
+        <h2><span class="dot m"></span>What is sent to third parties</h2>
+        <p>
+          The extension sends data <strong>only when you start a check</strong>, and only to the
+          providers below, using the keys you supply.
+        </p>
+
+        <h3>Anthropic (Claude API)<span class="pill req">Required</span></h3>
+        <ul>
+          <li>
+            <strong>What is sent:</strong> the text you select or scan, transcripts of tab audio you
+            choose to check, the contents of files you upload, and comments you paste for sentiment
+            analysis.
+          </li>
+          <li><strong>Why:</strong> to check claims, verify them with web search, analyze sentiment, and assess AI origin.</li>
+          <li>
+            <strong>Endpoint:</strong> <code>api.anthropic.com</code>. Governed by
+            <a href="https://www.anthropic.com/legal/privacy" target="_blank" rel="noreferrer">Anthropic's privacy policy</a>.
+          </li>
+        </ul>
+
+        <h3>Deepgram (speech to text)<span class="pill opt">Optional</span></h3>
+        <ul>
+          <li><strong>What is sent:</strong> audio captured from the browser tab you choose to listen to.</li>
+          <li><strong>Why:</strong> to transcribe spoken audio so it can be checked.</li>
+          <li>
+            <strong>Endpoint:</strong> <code>api.deepgram.com</code>. Governed by
+            <a href="https://deepgram.com/privacy" target="_blank" rel="noreferrer">Deepgram's privacy policy</a>.
+          </li>
+        </ul>
+        <p>
+          The extension does not send your content to any other party, and the developer never
+          receives it.
+        </p>
+      </div>
+
+      <div class="card">
+        <h2><span class="dot k"></span>Permissions and why they are needed</h2>
+        <ul>
+          <li><strong>storage:</strong> save your keys, settings, and history locally.</li>
+          <li>
+            <strong>activeTab and scripting:</strong> read page or selected text into the current tab
+            only, and only when you click to scan, enable highlight to check, or use the right-click
+            action. The extension has no standing access to any website.
+          </li>
+          <li><strong>tabCapture and offscreen:</strong> capture the audio of a tab you choose, for live checking.</li>
+          <li><strong>contextMenus:</strong> add the right-click "Fact-check selection" action.</li>
+          <li><strong>sidePanel:</strong> show the interface in a docked side panel.</li>
+          <li><strong>Access to <code>api.anthropic.com</code>:</strong> call the Claude API. This is the only host the extension can reach.</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h2><span class="dot t"></span>Data retention, children, and changes</h2>
+        <p>
+          <strong>Retention:</strong> the developer keeps nothing. Local data stays on your device
+          until you clear it or uninstall. Data sent to Anthropic and Deepgram is handled under their
+          own policies.
+        </p>
+        <p><strong>Children:</strong> the extension is not directed to children under 13.</p>
+        <p>
+          <strong>Changes:</strong> this policy may be updated, and the date at the top reflects the
+          latest version.
+        </p>
+      </div>
+
+      <p class="foot">
+        Questions? Open an issue at
+        <a href="https://github.com/Mrred883/ai-fact-checker" target="_blank" rel="noreferrer">github.com/Mrred883/ai-fact-checker</a>.
+      </p>
+    </div>
+  </body>
+</html>

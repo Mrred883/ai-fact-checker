@@ -130,7 +130,7 @@ developer.
 
 **Privacy policy URL:**
 ```
-https://mrred883.github.io/ai-fact-checker/store/PRIVACY
+https://mrred883.github.io/ai-fact-checker/store/PRIVACY.html
 ```
 
 ---
