@@ -142,9 +142,16 @@
       <input type="text" id="eyebrow" value="REAL-TIME FACT CHECKING" />
       <input type="text" id="headline" value="Know what's true, as you read." />
       <input type="text" id="sub" value="Highlight text or scan a page — claims get verified with Claude and live web search, each on a false-to-true scale." />
-      <button id="dl">Download 1280×800 PNG</button>
     </div>
-    <p class="scaleNote">Preview scaled to fit your screen — the export is always exactly 1280×800.</p>
+    <div class="controls">
+      <button id="dl">Screenshot 1280×800</button>
+      <button id="dl-small" style="background:#1f9254">Small tile 440×280</button>
+      <button id="dl-marquee" style="background:#7c3aed">Marquee 1400×560</button>
+    </div>
+    <p class="scaleNote">
+      Screenshot export frames the uploaded image. The two promo tiles are pure brand art (no
+      screenshot needed) — they use the current headline. All exports are the exact Web Store sizes.
+    </p>
 
     <div id="frame">
       <div class="stage">
@@ -401,6 +408,124 @@
           a.click()
           setTimeout(() => URL.revokeObjectURL(a.href), 1000)
         }, 'image/png')
+      })
+
+      function download(canvas, name) {
+        canvas.toBlob((blob) => {
+          const a = document.createElement('a')
+          a.download = name
+          a.href = URL.createObjectURL(blob)
+          a.click()
+          setTimeout(() => URL.revokeObjectURL(a.href), 1000)
+        }, 'image/png')
+      }
+
+      // draw a full-width litmus scale with a marker — the promo hero graphic
+      function litmusScale(ctx, x, y, w, h, markerPct) {
+        const g = ctx.createLinearGradient(x, 0, x + w, 0)
+        g.addColorStop(0, '#e5484d')
+        g.addColorStop(0.5, '#f5a524')
+        g.addColorStop(1, '#1f9254')
+        ctx.fillStyle = g
+        roundRect(ctx, x, y, w, h, h / 2)
+        ctx.fill()
+        // white marker
+        const mx = x + (w * markerPct) / 100
+        const mw = h * 0.34
+        ctx.save()
+        ctx.shadowColor = 'rgba(0,0,0,0.35)'
+        ctx.shadowBlur = 10
+        ctx.fillStyle = '#fff'
+        roundRect(ctx, mx - mw / 2, y - h * 0.28, mw, h * 1.56, mw / 2)
+        ctx.fill()
+        ctx.restore()
+      }
+
+      // shared dark promo background (distinct from the light screenshot style)
+      function promoBg(ctx, w, h) {
+        const bg = ctx.createLinearGradient(0, 0, w, h)
+        bg.addColorStop(0, '#101820')
+        bg.addColorStop(1, '#1b2732')
+        ctx.fillStyle = bg
+        ctx.fillRect(0, 0, w, h)
+        // faint diagonal glow
+        const glow = ctx.createRadialGradient(w * 0.8, -h * 0.2, 40, w * 0.8, -h * 0.2, w * 0.9)
+        glow.addColorStop(0, 'rgba(124,77,255,0.20)')
+        glow.addColorStop(1, 'rgba(124,77,255,0)')
+        ctx.fillStyle = glow
+        ctx.fillRect(0, 0, w, h)
+      }
+
+      // SMALL PROMO TILE — 440×280
+      $('dl-small').addEventListener('click', async () => {
+        try { await document.fonts.ready } catch {}
+        const c = document.createElement('canvas')
+        c.width = 440; c.height = 280
+        const ctx = c.getContext('2d')
+        promoBg(ctx, 440, 280)
+        // hero litmus scale
+        litmusScale(ctx, 40, 96, 360, 16, 84)
+        // wordmark
+        ctx.fillStyle = '#fff'
+        ctx.font = '700 30px "Space Grotesk", system-ui, sans-serif'
+        ctx.textBaseline = 'alphabetic'
+        ctx.fillText('AI Fact Checker', 40, 74)
+        // tagline
+        ctx.fillStyle = '#aeb9c0'
+        ctx.font = '500 15px "IBM Plex Sans", system-ui, sans-serif'
+        ctx.fillText('Know what’s true, as you read.', 40, 168)
+        // false/true caps under the scale
+        ctx.fillStyle = '#7f8b92'
+        ctx.font = '600 10px "IBM Plex Mono", monospace'
+        ctx.fillText('FALSE', 40, 200)
+        const tw = ctx.measureText('TRUE').width
+        ctx.fillText('TRUE', 400 - tw, 200)
+        download(c, 'ai-fact-checker-promo-440x280.png')
+      })
+
+      // MARQUEE PROMO — 1400×560
+      $('dl-marquee').addEventListener('click', async () => {
+        try { await document.fonts.ready } catch {}
+        const c = document.createElement('canvas')
+        c.width = 1400; c.height = 560
+        const ctx = c.getContext('2d')
+        promoBg(ctx, 1400, 560)
+        const padL = 90
+        // wordmark row with mini mark
+        const mg = ctx.createLinearGradient(padL, 0, padL + 70, 0)
+        mg.addColorStop(0, '#e5484d'); mg.addColorStop(0.5, '#f5a524'); mg.addColorStop(1, '#1f9254')
+        ctx.fillStyle = mg
+        roundRect(ctx, padL, 92, 70, 9, 4.5); ctx.fill()
+        ctx.fillStyle = '#fff'
+        roundRect(ctx, padL + 55, 84, 4, 24, 2); ctx.fill()
+        ctx.font = '600 26px "Space Grotesk", system-ui, sans-serif'
+        ctx.textBaseline = 'middle'
+        ctx.fillText('AI Fact Checker', padL + 88, 97)
+
+        // big headline
+        ctx.textBaseline = 'alphabetic'
+        ctx.font = '700 72px "Space Grotesk", system-ui, sans-serif'
+        ctx.fillStyle = '#fff'
+        ctx.fillText('Know what’s ', padL, 250)
+        const kw = ctx.measureText('Know what’s ').width
+        // accent the word "true" in litmus green
+        ctx.fillStyle = '#41c178'
+        ctx.fillText('true.', padL + kw, 250)
+
+        // sub
+        ctx.fillStyle = '#aeb9c0'
+        ctx.font = '400 26px "IBM Plex Sans", system-ui, sans-serif'
+        ctx.fillText('Real-time fact-checking for text, live video audio, and files — grounded in web search.', padL, 300)
+
+        // hero litmus scale across the lower third
+        litmusScale(ctx, padL, 400, 1400 - padL * 2, 22, 84)
+        ctx.fillStyle = '#7f8b92'
+        ctx.font = '600 13px "IBM Plex Mono", monospace'
+        ctx.fillText('FALSE', padL, 452)
+        const tw = ctx.measureText('TRUE').width
+        ctx.fillText('TRUE', 1400 - padL - tw, 452)
+
+        download(c, 'ai-fact-checker-marquee-1400x560.png')
       })
     </script>
   </body>
