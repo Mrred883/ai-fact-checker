@@ -175,6 +175,21 @@ export function Popup({ inPanel = false }: { inPanel?: boolean } = {}) {
       if (r.state) setListen(r.state)
       if (r.checking) setChecking(true) // a check was already running when we opened
     })
+    // reflect whether the active tab is already armed (a new page resets this).
+    // Re-check on tab switch or navigation so the side panel (which stays open)
+    // resets the button back to "enable" for each new page.
+    const refreshArmed = () =>
+      chrome.tabs.query({ active: true, currentWindow: true }).then(([t]) => {
+        if (t?.id != null) send({ type: 'ARM_QUERY', tabId: t.id }).then((r) => setArmed(!!(r.ok && r.armed)))
+        else setArmed(false)
+      })
+    refreshArmed()
+    const onActivated = () => refreshArmed()
+    const onUpdated = (_id: number, info: chrome.tabs.TabChangeInfo) => {
+      if (info.status === 'loading' || info.status === 'complete') refreshArmed()
+    }
+    chrome.tabs.onActivated.addListener(onActivated)
+    chrome.tabs.onUpdated.addListener(onUpdated)
     const offSettings = onSettingsChanged((s) => {
       setSettings(s)
       applyTheme(s.theme)
@@ -188,6 +203,8 @@ export function Popup({ inPanel = false }: { inPanel?: boolean } = {}) {
     return () => {
       offSettings()
       offHistory()
+      chrome.tabs.onActivated.removeListener(onActivated)
+      chrome.tabs.onUpdated.removeListener(onUpdated)
     }
   }, [])
 

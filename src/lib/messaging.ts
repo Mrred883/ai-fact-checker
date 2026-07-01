@@ -44,13 +44,15 @@ export type Msg =
   | { type: 'AUTOSCAN_QUERY' }
   // popup -> background : inject the selection toolbar into the active tab
   | { type: 'ARM_TAB'; tabId: number }
+  // popup -> background : is this tab already armed for highlight-to-check?
+  | { type: 'ARM_QUERY'; tabId: number }
   // popup -> content : toggle the on-page "scanning" animation
   | { type: 'SCAN_FX'; on: boolean }
   // content -> background : begin selection fact-check (from selection toolbar)
   | { type: 'PING' }
 
 export type MsgResponse =
-  | { ok: true; verdicts?: Verdict[]; state?: ListenState; autoScan?: boolean; checking?: boolean }
+  | { ok: true; verdicts?: Verdict[]; state?: ListenState; autoScan?: boolean; checking?: boolean; armed?: boolean }
   | { ok: false; error: string }
 
 /** True only when the extension context is still alive (false after a reload/update). */

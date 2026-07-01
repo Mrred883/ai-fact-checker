@@ -278,10 +278,15 @@ onMessage(async (msg, sender): Promise<MsgResponse> => {
     case 'ARM_TAB':
       try {
         await armTab(msg.tabId)
-        return { ok: true }
+        return { ok: true, armed: true }
       } catch (e) {
         return { ok: false, error: e instanceof Error ? e.message : String(e) }
       }
+
+    case 'ARM_QUERY':
+      // popup asks whether THIS tab is currently armed, so the button reflects
+      // reality (a new page or navigation resets it back to "enable")
+      return { ok: true, armed: armedTabs.has(msg.tabId) }
 
     case 'AUDIO_START':
       try {
