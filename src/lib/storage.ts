@@ -90,3 +90,17 @@ export function onSettingsChanged(cb: (s: Settings) => void): () => void {
   chrome.storage.onChanged.addListener(handler)
   return () => chrome.storage.onChanged.removeListener(handler)
 }
+
+/** Fire whenever the verdict history changes in storage (any context writes it). */
+export function onHistoryChanged(cb: (h: Verdict[]) => void): () => void {
+  const handler = (
+    changes: Record<string, chrome.storage.StorageChange>,
+    area: string,
+  ) => {
+    if (area === 'local' && changes[HISTORY_KEY]) {
+      cb((changes[HISTORY_KEY].newValue as Verdict[]) ?? [])
+    }
+  }
+  chrome.storage.onChanged.addListener(handler)
+  return () => chrome.storage.onChanged.removeListener(handler)
+}

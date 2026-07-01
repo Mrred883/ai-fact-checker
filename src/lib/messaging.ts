@@ -50,7 +50,7 @@ export type Msg =
   | { type: 'PING' }
 
 export type MsgResponse =
-  | { ok: true; verdicts?: Verdict[]; state?: ListenState; autoScan?: boolean }
+  | { ok: true; verdicts?: Verdict[]; state?: ListenState; autoScan?: boolean; checking?: boolean }
   | { ok: false; error: string }
 
 /** True only when the extension context is still alive (false after a reload/update). */

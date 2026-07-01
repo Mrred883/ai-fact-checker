@@ -21,7 +21,7 @@ import { AssetsPanel } from '@/components/AssetsPanel'
 import { SentimentPanel } from '@/components/SentimentPanel'
 import { LitmusMark } from '@/components/LitmusMark'
 import { applyTheme } from '@/lib/theme'
-import { getSettings, getHistory, clearHistory, onSettingsChanged } from '@/lib/storage'
+import { getSettings, getHistory, clearHistory, onSettingsChanged, onHistoryChanged } from '@/lib/storage'
 import { send, sendToTab } from '@/lib/messaging'
 import { cn } from '@/lib/utils'
 import type { ListenState, Msg } from '@/lib/messaging'
@@ -170,11 +170,25 @@ export function Popup({ inPanel = false }: { inPanel?: boolean } = {}) {
       applyTheme(s.theme)
     })
     getHistory().then(setHistory)
-    send({ type: 'STATE_QUERY' }).then((r) => r.ok && r.state && setListen(r.state))
-    return onSettingsChanged((s) => {
+    send({ type: 'STATE_QUERY' }).then((r) => {
+      if (!r.ok) return
+      if (r.state) setListen(r.state)
+      if (r.checking) setChecking(true) // a check was already running when we opened
+    })
+    const offSettings = onSettingsChanged((s) => {
       setSettings(s)
       applyTheme(s.theme)
     })
+    // update the feed the instant history is written, regardless of whether the
+    // live VERDICTS broadcast reached us (fixes results appearing late)
+    const offHistory = onHistoryChanged((h) => {
+      setHistory(h)
+      setChecking(false)
+    })
+    return () => {
+      offSettings()
+      offHistory()
+    }
   }, [])
 
   useEffect(() => {

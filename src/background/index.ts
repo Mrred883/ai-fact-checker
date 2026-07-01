@@ -62,6 +62,9 @@ function setState(patch: Partial<ListenState>) {
 
 // number of verdicts the user hasn't seen in the popup yet (badge count)
 let unseen = 0
+// how many text checks are in flight — so a freshly-opened popup can show the
+// "Checking…" placeholder even though the check started before it opened
+let checksInFlight = 0
 
 /** Open the extension's own UI and flag unread results. Skipped for live audio. */
 async function openExtensionUi(count: number) {
@@ -261,9 +264,10 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
 onMessage(async (msg, sender): Promise<MsgResponse> => {
   switch (msg.type) {
     case 'STATE_QUERY':
-      // popup just opened — clear the unread badge
+      // popup just opened — clear the unread badge, and tell it if a check is
+      // already running so it can show the placeholder right away
       clearUnseen()
-      return { ok: true, state: { ...state } }
+      return { ok: true, state: { ...state }, checking: checksInFlight > 0 }
 
     case 'AUTOSCAN_QUERY': {
       // answer the content script with a boolean only — the API key stays here,
@@ -336,6 +340,7 @@ onMessage(async (msg, sender): Promise<MsgResponse> => {
         // the model has produced anything. web_search runs before any output, so
         // without this the popup would look frozen for several seconds.
         void openExtensionUi(0)
+        checksInFlight++
         broadcastRuntime({ type: 'CHECKING', on: true, source: msg.source })
         try {
           const { verdicts } = await factCheckTextStream(
@@ -348,7 +353,8 @@ onMessage(async (msg, sender): Promise<MsgResponse> => {
           await deliverVerdicts(verdicts, tabId)
           return { ok: true, verdicts }
         } finally {
-          broadcastRuntime({ type: 'CHECKING', on: false, source: msg.source })
+          checksInFlight = Math.max(0, checksInFlight - 1)
+          broadcastRuntime({ type: 'CHECKING', on: checksInFlight > 0, source: msg.source })
         }
       } catch (e) {
         return { ok: false, error: e instanceof Error ? e.message : String(e) }
