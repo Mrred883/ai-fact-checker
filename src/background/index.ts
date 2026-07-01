@@ -66,7 +66,12 @@ let unseen = 0
 // "Checking…" placeholder even though the check started before it opened
 let checksInFlight = 0
 
-/** Open the extension's own UI and flag unread results. Skipped for live audio. */
+/**
+ * Flag unread results with a toolbar badge. We deliberately do NOT force-open a
+ * popup: if the user has the extension pinned and open, results stream into it
+ * live; if not, the badge is the cue to click. Force-opening a second popup was
+ * confusing, so it was removed.
+ */
 async function openExtensionUi(count: number) {
   unseen += count
   try {
@@ -74,12 +79,6 @@ async function openExtensionUi(count: number) {
     chrome.action.setBadgeBackgroundColor({ color: '#7c3aed' })
   } catch {
     /* ignore */
-  }
-  try {
-    // open the toolbar popup automatically (Chrome 127+, focused window only)
-    await (chrome.action as unknown as { openPopup?: () => Promise<void> }).openPopup?.()
-  } catch {
-    // can't force-open here (window not focused / unsupported) — badge is the fallback cue
   }
 }
 

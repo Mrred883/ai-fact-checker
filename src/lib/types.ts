@@ -167,7 +167,7 @@ export interface Settings {
 export const DEFAULT_SETTINGS: Settings = {
   apiKey: '',
   deepgramKey: '',
-  model: 'claude-sonnet-4-6',
+  model: 'claude-haiku-4-5-20251001',
   sensitivity: 'balanced',
   maxSearches: 3,
   overlayEnabled: true,

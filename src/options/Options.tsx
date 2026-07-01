@@ -197,15 +197,15 @@ export function Options() {
           {/* ENGINE */}
           <Section kicker="Engine" title="Model and checking">
             <div className="divide-y divide-border">
-              <Row label="Model" hint="Sonnet for fast live use, Opus for depth.">
+              <Row label="Model" hint="Haiku is fastest and the default. Sonnet and Opus go deeper but slower.">
                 <Select
                   className="w-full sm:w-56"
                   value={s.model}
                   onChange={(v) => patch({ model: v as Settings['model'] })}
                   options={[
-                    { value: 'claude-sonnet-4-6', label: 'Claude Sonnet 4.6 (fast)' },
-                    { value: 'claude-opus-4-8', label: 'Claude Opus 4.8 (best)' },
-                    { value: 'claude-haiku-4-5-20251001', label: 'Claude Haiku 4.5 (cheapest)' },
+                    { value: 'claude-haiku-4-5-20251001', label: 'Claude Haiku 4.5 (fastest, default)' },
+                    { value: 'claude-sonnet-4-6', label: 'Claude Sonnet 4.6 (balanced)' },
+                    { value: 'claude-opus-4-8', label: 'Claude Opus 4.8 (deepest)' },
                   ]}
                 />
               </Row>
