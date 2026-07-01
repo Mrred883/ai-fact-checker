@@ -4,6 +4,12 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>AI Fact Checker — Screenshot Framer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap"
+      rel="stylesheet"
+    />
     <style>
       /* Litmus palette, matching the extension */
       :root {
@@ -186,6 +192,8 @@
       window.addEventListener('resize', fit)
       fit()
 
+      // keep the loaded screenshot around so the canvas exporter can draw it
+      let shotImg = null
       $('file').addEventListener('change', (e) => {
         const f = e.target.files?.[0]
         if (!f) return
@@ -194,7 +202,9 @@
         shot.className = 'shot'
         shot.innerHTML = ''
         const img = new Image()
-        img.onload = () => URL.revokeObjectURL(url)
+        img.onload = () => {
+          shotImg = img // a blob-URL image is same-origin → never taints the canvas
+        }
         img.src = url
         shot.appendChild(img)
       })
@@ -241,34 +251,156 @@
       }
       $('preset').addEventListener('change', (e) => applyPreset(e.target.value))
 
-      // Export using the browser's built-in rendering via SVG foreignObject → canvas.
-      $('dl').addEventListener('click', async () => {
-        const clone = frame.cloneNode(true)
-        clone.style.transform = 'none'
-        clone.style.margin = '0'
-        const html = clone.outerHTML
-        const svg =
-          `<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="800">` +
-          `<foreignObject width="1280" height="800">` +
-          `<div xmlns="http://www.w3.org/1999/xhtml">${html}</div>` +
-          `</foreignObject></svg>`
-        const img = new Image()
-        img.onload = () => {
-          const c = document.createElement('canvas')
-          c.width = 1280; c.height = 800
-          c.getContext('2d').drawImage(img, 0, 0)
-          const a = document.createElement('a')
-          a.download = 'screenshot-1280x800.png'
-          a.href = c.toDataURL('image/png')
-          a.click()
+      // Paint the whole 1280×800 directly on a canvas — no SVG, no taint. The
+      // uploaded screenshot is a same-origin blob image, so toDataURL works.
+      function roundRect(ctx, x, y, w, h, r) {
+        ctx.beginPath()
+        ctx.moveTo(x + r, y)
+        ctx.arcTo(x + w, y, x + w, y + h, r)
+        ctx.arcTo(x + w, y + h, x, y + h, r)
+        ctx.arcTo(x, y + h, x, y, r)
+        ctx.arcTo(x, y, x + w, y, r)
+        ctx.closePath()
+      }
+
+      // wrap text to a max width, return the lines
+      function wrap(ctx, text, maxW) {
+        const words = text.split(' ')
+        const lines = []
+        let line = ''
+        for (const w of words) {
+          const test = line ? line + ' ' + w : w
+          if (ctx.measureText(test).width > maxW && line) {
+            lines.push(line)
+            line = w
+          } else line = test
         }
-        img.onerror = () =>
-          alert(
-            'Export blocked (the embedded screenshot taints the canvas in some browsers).\n' +
-            'Fallback: press the OS screenshot key on the framed preview above, or use any\n' +
-            '1280×800 crop of it. The layout is already the exact export size.',
-          )
-        img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg)
+        if (line) lines.push(line)
+        return lines
+      }
+
+      $('dl').addEventListener('click', async () => {
+        // make sure the brand fonts are loaded so canvas text isn't a fallback
+        try { await document.fonts.ready } catch {}
+        const c = document.createElement('canvas')
+        c.width = 1280
+        c.height = 800
+        const ctx = c.getContext('2d')
+
+        // background — radial paper wash
+        const bg = ctx.createRadialGradient(1000, -80, 100, 640, 400, 1100)
+        bg.addColorStop(0, '#ffffff')
+        bg.addColorStop(0.55, '#eef1f4')
+        bg.addColorStop(1, '#e2e7eb')
+        ctx.fillStyle = bg
+        ctx.fillRect(0, 0, 1280, 800)
+
+        // top litmus rule
+        const rule = ctx.createLinearGradient(0, 0, 1280, 0)
+        rule.addColorStop(0, '#e5484d')
+        rule.addColorStop(0.5, '#f5a524')
+        rule.addColorStop(1, '#1f9254')
+        ctx.fillStyle = rule
+        ctx.fillRect(0, 0, 1280, 4)
+
+        const padL = 88
+        // brand mark (mini litmus) + wordmark
+        const my = 150
+        const mg = ctx.createLinearGradient(padL, 0, padL + 64, 0)
+        mg.addColorStop(0, '#e5484d')
+        mg.addColorStop(0.5, '#f5a524')
+        mg.addColorStop(1, '#1f9254')
+        ctx.fillStyle = mg
+        roundRect(ctx, padL, my + 9, 64, 8, 4)
+        ctx.fill()
+        ctx.fillStyle = '#16202a'
+        roundRect(ctx, padL + 50, my + 2, 4, 22, 2)
+        ctx.fill()
+        ctx.fillStyle = '#16202a'
+        ctx.font = '700 26px "Space Grotesk", system-ui, sans-serif'
+        ctx.textBaseline = 'middle'
+        ctx.fillText('AI Fact Checker', padL + 78, my + 13)
+
+        // eyebrow
+        ctx.textBaseline = 'alphabetic'
+        ctx.fillStyle = '#25617a'
+        ctx.font = '600 11px "IBM Plex Mono", ui-monospace, monospace'
+        const eyebrow = $('eyebrow').value.toUpperCase()
+        // letter-spacing by drawing char by char
+        let ex = padL
+        const eyY = my + 78
+        for (const ch of eyebrow) {
+          ctx.fillText(ch, ex, eyY)
+          ex += ctx.measureText(ch).width + 3
+        }
+
+        // headline (wraps, accent on the word "true")
+        const maxTextW = 560
+        ctx.font = '700 46px "Space Grotesk", system-ui, sans-serif'
+        const hlLines = wrap(ctx, $('headline').value, maxTextW)
+        let hy = eyY + 56
+        for (const ln of hlLines) {
+          let x = padL
+          for (const word of ln.split(' ')) {
+            const isTrue = /^true[.,!?]?$/i.test(word)
+            ctx.fillStyle = isTrue ? '#25617a' : '#16202a'
+            ctx.fillText(word + ' ', x, hy)
+            x += ctx.measureText(word + ' ').width
+          }
+          hy += 54
+        }
+
+        // sub
+        ctx.fillStyle = '#5c6a70'
+        ctx.font = '400 19px "IBM Plex Sans", system-ui, sans-serif'
+        const subLines = wrap(ctx, $('sub').value, maxTextW)
+        let sy = hy + 8
+        for (const ln of subLines) {
+          ctx.fillText(ln, padL, sy)
+          sy += 28
+        }
+
+        // the screenshot card on the right
+        if (shotImg) {
+          const maxW = 460
+          const maxH = 620
+          const ar = shotImg.width / shotImg.height
+          let w = maxW
+          let h = w / ar
+          if (h > maxH) {
+            h = maxH
+            w = h * ar
+          }
+          const cardX = 1280 - 88 - w
+          const cardY = (800 - h) / 2
+          // shadow + rounded clip
+          ctx.save()
+          ctx.shadowColor = 'rgba(15,23,42,0.35)'
+          ctx.shadowBlur = 60
+          ctx.shadowOffsetY = 30
+          roundRect(ctx, cardX, cardY, w, h, 18)
+          ctx.fillStyle = '#fff'
+          ctx.fill()
+          ctx.restore()
+          ctx.save()
+          roundRect(ctx, cardX, cardY, w, h, 18)
+          ctx.clip()
+          ctx.drawImage(shotImg, cardX, cardY, w, h)
+          ctx.restore()
+          // hairline border
+          ctx.strokeStyle = '#dce0e3'
+          ctx.lineWidth = 1
+          roundRect(ctx, cardX + 0.5, cardY + 0.5, w - 1, h - 1, 18)
+          ctx.stroke()
+        }
+
+        c.toBlob((blob) => {
+          const a = document.createElement('a')
+          a.download = 'ai-fact-checker-' + ($('preset').value || 'shot') + '-1280x800.png'
+          a.href = URL.createObjectURL(blob)
+          a.click()
+          setTimeout(() => URL.revokeObjectURL(a.href), 1000)
+        }, 'image/png')
       })
     </script>
   </body>
