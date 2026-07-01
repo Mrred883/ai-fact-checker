@@ -413,27 +413,25 @@ export function Popup({ inPanel = false }: { inPanel?: boolean } = {}) {
             <Stat label="Flagged" value={metrics.flagged} />
           </div>
 
-          {/* controls */}
-          <div className="grid shrink-0 grid-cols-2 gap-2 px-3 pt-3">
+          {/* controls — three evenly spaced actions */}
+          <div className="grid shrink-0 grid-cols-3 gap-2 px-3 py-3">
             <Button onClick={toggleListen} variant={listen.listening ? 'destructive' : 'default'}>
               {listen.listening ? <Square className="size-4" /> : <Mic className="size-4" />}
               {listen.listening ? 'Stop' : 'Listen'}
             </Button>
             <Button variant="outline" onClick={scanPage} disabled={busy}>
               <ScanText className="size-4" />
-              {busy ? 'Scanning…' : 'Scan page'}
+              {busy ? 'Scanning…' : 'Scan'}
             </Button>
-          </div>
-          {/* arm the on-page selection toolbar for this tab (no standing access) */}
-          <div className="px-3 pb-3 pt-2">
-            <button
+            <Button
+              variant="outline"
               onClick={armPage}
               disabled={armed}
-              className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-border bg-card px-3 py-2 font-data text-[10px] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:text-foreground disabled:opacity-70"
+              title={armed ? 'Highlight-to-check is on for this page' : 'Enable highlight-to-check on this page'}
             >
-              <MousePointerClick className="size-3.5" />
-              {armed ? 'Highlight-to-check on for this page' : 'Enable highlight-to-check here'}
-            </button>
+              <MousePointerClick className="size-4" />
+              {armed ? 'On' : 'Highlight'}
+            </Button>
           </div>
 
           {listen.listening && (

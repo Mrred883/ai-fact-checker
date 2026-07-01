@@ -92,12 +92,12 @@ function Selector() {
     })
   }, [])
 
-  // show the pill when there's a meaningful selection
+  // show the pill for almost any selection (ignore only empty / accidental 1-char)
   useEffect(() => {
     const onUp = () => {
       const s = window.getSelection()
       const text = s?.toString().trim() ?? ''
-      if (text.length < 15 || !s || s.rangeCount === 0) {
+      if (text.length < 2 || !s || s.rangeCount === 0) {
         setSel(null)
         return
       }
