@@ -126,9 +126,16 @@
   <body>
     <div class="controls">
       <label>Screenshot: <input type="file" id="file" accept="image/png,image/jpeg" /></label>
+      <label>Preset:
+        <select id="preset">
+          <option value="feed">Feed — text fact-checking</option>
+          <option value="assets">Assets — docs + AI detector</option>
+          <option value="sentiment">Sentiment analysis</option>
+        </select>
+      </label>
       <input type="text" id="eyebrow" value="REAL-TIME FACT CHECKING" />
       <input type="text" id="headline" value="Know what's true, as you read." />
-      <input type="text" id="sub" value="Verify text, live video audio, and files with Claude and web search." />
+      <input type="text" id="sub" value="Highlight text or scan a page — claims get verified with Claude and live web search, each on a false-to-true scale." />
       <button id="dl">Download 1280×800 PNG</button>
     </div>
     <p class="scaleNote">Preview scaled to fit your screen — the export is always exactly 1280×800.</p>
@@ -152,7 +159,7 @@
           </div>
           <div class="eyebrow" id="o-eyebrow">REAL-TIME FACT CHECKING</div>
           <div class="headline" id="o-headline">Know what's <span class="hl">true</span>, as you read.</div>
-          <div class="sub" id="o-sub">Verify text, live video audio, and files with Claude and web search.</div>
+          <div class="sub" id="o-sub">Highlight text or scan a page — claims get verified with Claude and live web search, each on a false-to-true scale.</div>
         </div>
         <div class="shot empty" id="shot">
           Drop a popup or side-panel screenshot above.<br />It gets framed here.
@@ -206,6 +213,33 @@
       bind('eyebrow', 'o-eyebrow', false)
       bind('headline', 'o-headline', true)
       bind('sub', 'o-sub', false)
+
+      // three tab presets — pick one, fields + preview update
+      const PRESETS = {
+        feed: {
+          eyebrow: 'REAL-TIME FACT CHECKING',
+          headline: "Know what's true, as you read.",
+          sub: 'Highlight text or scan a page — claims get verified with Claude and live web search, each on a false-to-true scale.',
+        },
+        assets: {
+          eyebrow: 'DOCUMENTS & IMAGES',
+          headline: "Check the claims — and if it's AI-made.",
+          sub: 'Upload PDFs, images, or text to verify what they claim, ask questions about them, and detect AI-generated content via Content Credentials.',
+        },
+        sentiment: {
+          eyebrow: 'SENTIMENT ANALYSIS',
+          headline: 'Read the room in seconds.',
+          sub: "Paste comments, tweets, or reviews — see the crowd's mood, the positive-to-negative split, and what's driving it.",
+        },
+      }
+      function applyPreset(key) {
+        const p = PRESETS[key]
+        for (const [id, val] of Object.entries(p)) {
+          $(id).value = val
+          $(id).dispatchEvent(new Event('input'))
+        }
+      }
+      $('preset').addEventListener('change', (e) => applyPreset(e.target.value))
 
       // Export using the browser's built-in rendering via SVG foreignObject → canvas.
       $('dl').addEventListener('click', async () => {
