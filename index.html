@@ -155,8 +155,9 @@
       .feat h3 { font-family: "Space Grotesk", sans-serif; font-size: 17px; font-weight: 600; }
       .feat p { color: var(--muted); font-size: 14.5px; margin-top: 8px; }
 
-      /* screenshots */
-      .shots { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+      /* screenshots — a touch wider than the text sections so images read clearly */
+      #screens .wrap { max-width: 1200px; }
+      .shots { display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 24px; }
       .shot {
         border: 1px solid var(--border); border-radius: 16px; overflow: hidden; background: var(--card);
         box-shadow: 0 20px 50px -30px rgba(15,23,42,.4);
@@ -205,7 +206,7 @@
   <body>
     <!-- edit this one line when the Web Store listing goes live -->
     <script>
-      window.STORE_URL = ""; // e.g. "https://chromewebstore.google.com/detail/XXXXXXXX"
+      window.STORE_URL = "https://chromewebstore.google.com/detail/ai-fact-checker/dcgiggoaljimdoegpmpmfdejknifklgo";
     </script>
 
     <nav>
