@@ -73,6 +73,9 @@
         transition: color .15s, background .15s;
       }
       .nav-links a:hover { color: var(--ink); background: color-mix(in srgb, var(--teal) 10%, transparent); }
+      /* the CTA in the nav is a button, not a nav link — keep its white text */
+      .nav-links a.btn-primary { color: #fff; }
+      .nav-links a.btn-primary:hover { color: #fff; background: var(--teal-hover); }
 
       .btn {
         display: inline-flex; align-items: center; gap: 8px;
