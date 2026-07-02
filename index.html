@@ -204,6 +204,47 @@
       .foot-in a { color: var(--muted); }
       .foot-in a:hover { color: var(--ink); }
       .foot-in .sp { margin-left: auto; }
+
+      /* ── tablet ─────────────────────────────────────────────── */
+      @media (max-width: 860px) {
+        .wrap { padding: 0 20px; }
+        section { padding: 48px 0; }
+        .hero { padding: 56px 0 32px; }
+        /* the secondary nav links collapse; the logo and CTA stay */
+        .nav-links a:not(.btn-primary) { display: none; }
+        #screens .wrap { max-width: 100%; }
+        /* one screenshot per row so each stays large and legible */
+        .shots { grid-template-columns: 1fr; gap: 20px; max-width: 560px; margin: 0 auto; }
+        .band { padding: 32px 24px; }
+      }
+
+      /* ── phone ──────────────────────────────────────────────── */
+      @media (max-width: 560px) {
+        .wrap { padding: 0 16px; }
+        .nav-in { height: 56px; gap: 8px; }
+        .logo b { font-size: 15px; }
+        .mark { width: 52px; height: 21px; }
+        .nav-links a.btn-primary { padding: 7px 12px; font-size: 13px; }
+        section { padding: 40px 0; }
+        .hero { padding: 40px 0 28px; }
+        .hero p.lede { font-size: 16px; }
+        .sec-head { margin-bottom: 28px; }
+        .sec-head p { font-size: 15px; }
+        /* full-width stacked CTAs so they are easy to tap */
+        .cta { flex-direction: column; align-items: stretch; }
+        .cta .btn { justify-content: center; }
+        .feat { padding: 20px; }
+        .grid, .steps { gap: 12px; }
+        .band { padding: 26px 18px; border-radius: 16px; }
+        .band h2 { font-size: 23px; }
+        /* footer reads as a clean stacked list, no auto-push */
+        .foot-in { flex-direction: column; align-items: flex-start; gap: 8px; }
+        .foot-in .sp { margin-left: 0; }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        * { animation: none !important; transition: none !important; scroll-behavior: auto; }
+      }
     </style>
   </head>
   <body>
